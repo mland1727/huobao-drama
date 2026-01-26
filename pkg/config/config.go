@@ -31,7 +31,7 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Type     string `mapstructure:"type"` // sqlite, mysql
+	Type     string `mapstructure:"type"` // sqlite, mysql, pgsql
 	Path     string `mapstructure:"path"` // SQLite数据库文件路径
 	Host     string `mapstructure:"host"`
 	Port     int    `mapstructure:"port"`

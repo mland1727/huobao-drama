@@ -17,8 +17,8 @@ type Drama struct {
 	TotalDuration int            `gorm:"default:0" json:"total_duration"`
 	Status        string         `gorm:"type:varchar(20);default:'draft';not null" json:"status"`
 	Thumbnail     *string        `gorm:"type:varchar(500)" json:"thumbnail"`
-	Tags          datatypes.JSON `gorm:"type:json" json:"tags"`
-	Metadata      datatypes.JSON `gorm:"type:json" json:"metadata"`
+	Tags          datatypes.JSON `gorm:"type:jsonb" json:"tags"`
+	Metadata      datatypes.JSON `gorm:"type:jsonb" json:"metadata"`
 	CreatedAt     time.Time      `gorm:"not null;autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"not null;autoUpdateTime" json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
@@ -43,7 +43,7 @@ type Character struct {
 	Personality     *string        `gorm:"type:text" json:"personality"`
 	VoiceStyle      *string        `gorm:"type:varchar(200)" json:"voice_style"`
 	ImageURL        *string        `gorm:"type:varchar(500)" json:"image_url"`
-	ReferenceImages datatypes.JSON `gorm:"type:json" json:"reference_images"`
+	ReferenceImages datatypes.JSON `gorm:"type:jsonb" json:"reference_images"`
 	SeedValue       *string        `gorm:"type:varchar(100)" json:"seed_value"`
 	SortOrder       int            `gorm:"default:0" json:"sort_order"`
 	CreatedAt       time.Time      `gorm:"not null;autoCreateTime" json:"created_at"`
@@ -157,7 +157,7 @@ type Prop struct {
 	Description     *string        `gorm:"type:text" json:"description"`
 	Prompt          *string        `gorm:"type:text" json:"prompt"` // AI Image prompt
 	ImageURL        *string        `gorm:"type:varchar(500)" json:"image_url"`
-	ReferenceImages datatypes.JSON `gorm:"type:json" json:"reference_images"`
+	ReferenceImages datatypes.JSON `gorm:"type:jsonb" json:"reference_images"`
 	CreatedAt       time.Time      `gorm:"not null;autoCreateTime" json:"created_at"`
 	UpdatedAt       time.Time      `gorm:"not null;autoUpdateTime" json:"updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`

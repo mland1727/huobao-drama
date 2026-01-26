@@ -28,7 +28,6 @@ func main() {
 	defer logr.Sync()
 
 	logr.Info("Starting Drama Generator API Server...")
-
 	db, err := database.NewDatabase(cfg.Database)
 	if err != nil {
 		logr.Fatal("Failed to connect to database", "error", err)
@@ -36,10 +35,10 @@ func main() {
 	logr.Info("Database connected successfully")
 
 	// 自动迁移数据库表结构
-	if err := database.AutoMigrate(db); err != nil {
-		logr.Fatal("Failed to migrate database", "error", err)
-	}
-	logr.Info("Database tables migrated successfully")
+	// if err := database.AutoMigrate(db); err != nil {
+	// 	logr.Fatal("Failed to migrate database", "error", err)
+	// }
+	// logr.Info("Database tables migrated successfully")
 
 	// 初始化本地存储
 	var localStorage *storage.LocalStorage
