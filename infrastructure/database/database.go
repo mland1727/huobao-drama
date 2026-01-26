@@ -22,6 +22,11 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 		if err := os.MkdirAll(dbDir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create database directory: %w", err)
 		}
+	} else if cfg.Type != "postgres" {
+		dbDir := filepath.Dir(dsn)
+		if err := os.MkdirAll(dbDir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create database directory: %w", err)
+		}
 	}
 
 	gormConfig := &gorm.Config{

@@ -99,16 +99,16 @@ func LoadConfig() (*Config, error) {
 }
 
 func (c *DatabaseConfig) DSN() string {
-	if c.Type == "sqlite" {
+	switch c.Type {
+	case "sqlite":
 		return c.Path
+	case "postgres":
+		// PostgreSQL DSN 格式
+		return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable TimeZone=Asia/Shanghai",
+			c.Host, c.Port, c.User, c.Password, c.Database)
+	default:
+		// MySQL DSN 格式
+		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
+			c.User, c.Password, c.Host, c.Port, c.Database, c.Charset)
 	}
-	// MySQL DSN
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
-		c.User,
-		c.Password,
-		c.Host,
-		c.Port,
-		c.Database,
-		c.Charset,
-	)
 }
