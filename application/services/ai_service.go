@@ -66,28 +66,31 @@ func (s *AIService) CreateConfig(req *CreateAIConfigRequest) (*models.AIServiceC
 	if endpoint == "" {
 		switch req.Provider {
 		case "gemini", "google":
-			if req.ServiceType == "text" {
+			switch req.ServiceType {
+			case "text":
 				endpoint = "/v1beta/models/{model}:generateContent"
-			} else if req.ServiceType == "image" {
+			case "image":
 				endpoint = "/v1beta/models/{model}:generateContent"
 			}
 		case "openai":
-			if req.ServiceType == "text" {
+			switch req.ServiceType {
+			case "text":
 				endpoint = "/chat/completions"
-			} else if req.ServiceType == "image" {
+			case "image":
 				endpoint = "/images/generations"
-			} else if req.ServiceType == "video" {
+			case "video":
 				endpoint = "/videos"
 				if queryEndpoint == "" {
 					queryEndpoint = "/videos/{taskId}"
 				}
 			}
 		case "chatfire":
-			if req.ServiceType == "text" {
+			switch req.ServiceType {
+			case "text":
 				endpoint = "/chat/completions"
-			} else if req.ServiceType == "image" {
+			case "image":
 				endpoint = "/images/generations"
-			} else if req.ServiceType == "video" {
+			case "video":
 				endpoint = "/video/generations"
 				if queryEndpoint == "" {
 					queryEndpoint = "/video/task/{taskId}"
@@ -102,12 +105,18 @@ func (s *AIService) CreateConfig(req *CreateAIConfigRequest) (*models.AIServiceC
 			}
 		default:
 			// 默认使用 OpenAI 格式
-			if req.ServiceType == "text" {
+			switch req.ServiceType {
+			case "text":
 				endpoint = "/chat/completions"
-			} else if req.ServiceType == "image" {
+			case "image":
 				endpoint = "/images/generations"
 			}
 		}
+	}
+
+	settings := "{}"
+	if req.Settings != "" {
+		settings = req.Settings
 	}
 
 	config := &models.AIServiceConfig{
@@ -122,7 +131,7 @@ func (s *AIService) CreateConfig(req *CreateAIConfigRequest) (*models.AIServiceC
 		Priority:      req.Priority,
 		IsDefault:     req.IsDefault,
 		IsActive:      true,
-		Settings:      req.Settings,
+		Settings:      settings,
 	}
 
 	if err := s.db.Create(config).Error; err != nil {

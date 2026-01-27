@@ -3,7 +3,7 @@
     v-model="visible"
     :title="$t('aiConfig.title')"
     width="900px"
-    :close-on-click-modal="false"
+    :close-on-click-modal="true"
     destroy-on-close
     class="ai-config-dialog"
   >
@@ -66,7 +66,7 @@
       v-model="quickSetupVisible"
       title="一键配置"
       width="500px"
-      :close-on-click-modal="false"
+      :close-on-click-modal="true"
       append-to-body
     >
       <div class="quick-setup-info">
@@ -90,14 +90,14 @@
       </el-form>
       <template #footer>
         <div class="quick-setup-footer">
-          <a 
+          <!-- <a 
             href="https://api.chatfire.site/login?inviteCode=C4453345" 
             target="_blank"
             class="register-link"
           >
             没有 API Key？点击注册
-          </a>
-          <div class="footer-buttons">
+          </a> -->
+          <div class="dialog-footer">
             <el-button @click="quickSetupVisible = false">取消</el-button>
             <el-button type="primary" @click="handleQuickSetup" :loading="quickSetupLoading">
               确认配置
@@ -112,7 +112,7 @@
       v-model="editDialogVisible"
       :title="isEdit ? $t('aiConfig.editConfig') : $t('aiConfig.addConfig')"
       width="600px"
-      :close-on-click-modal="false"
+      :close-on-click-modal="true"
       append-to-body
     >
       <el-form
@@ -202,14 +202,14 @@
 
       <template #footer>
         <div class="quick-setup-footer">
-          <a 
+          <!-- <a 
             href="https://api.chatfire.site/login?inviteCode=C4453345" 
             target="_blank"
             class="register-link"
           >
             没有 API Key？点击注册
-          </a>
-          <div class="footer-buttons">
+          </a> -->
+          <div class="dialog-footer">
             <el-button @click="editDialogVisible = false">{{ $t('common.cancel') }}</el-button>
             <el-button v-if="form.service_type === 'text'" @click="testConnection" :loading="testing">{{ $t('aiConfig.actions.test') }}</el-button>
             <el-button type="primary" @click="handleSubmit" :loading="submitting">
@@ -291,7 +291,12 @@ const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
     { 
       id: 'gemini', 
       name: 'Google Gemini', 
-      models: ['gemini-2.5-pro', 'gemini-3-pro-preview']
+      models: [
+        'gemini-2.5-pro',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-3-pro-preview'
+      ]
     }
   ],
   image: [
@@ -798,7 +803,7 @@ watch(visible, (val) => {
 
 .quick-setup-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   width: 100%;
 }
@@ -818,6 +823,13 @@ watch(visible, (val) => {
   display: flex;
   gap: 8px;
 }
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 
 .dialog-title {
   font-size: 1.125rem;

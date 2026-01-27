@@ -14,13 +14,13 @@ type AIServiceConfig struct {
 	Name          string     `gorm:"type:varchar(100);not null" json:"name"`
 	BaseURL       string     `gorm:"type:varchar(255);not null" json:"base_url"`
 	APIKey        string     `gorm:"type:varchar(255);not null" json:"api_key"`
-	Model         ModelField `gorm:"type:text" json:"model"`
+	Model         ModelField `gorm:"type:jsonb" json:"model"`
 	Endpoint      string     `gorm:"type:varchar(255)" json:"endpoint"`
 	QueryEndpoint string     `gorm:"type:varchar(255)" json:"query_endpoint"`
 	Priority      int        `gorm:"default:0" json:"priority"` // 优先级，数值越大优先级越高
 	IsDefault     bool       `gorm:"default:false" json:"is_default"`
 	IsActive      bool       `gorm:"default:true" json:"is_active"`
-	Settings      string     `gorm:"type:text" json:"settings"`
+	Settings      string     `gorm:"type:jsonb" json:"settings"`
 	CreatedAt     time.Time  `gorm:"not null;autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time  `gorm:"not null;autoUpdateTime" json:"updated_at"`
 }

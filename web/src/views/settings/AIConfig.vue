@@ -19,39 +19,39 @@
       <!-- Tabs / 标签页 -->
       <div class="tabs-wrapper">
         <el-tabs v-model="activeTab" @tab-change="handleTabChange" class="config-tabs">
-      <el-tab-pane :label="$t('aiConfig.tabs.text')" name="text">
-        <ConfigList 
-          :configs="configs" 
-          :loading="loading"
-          :show-test-button="true"
-          @edit="handleEdit"
-          @delete="handleDelete"
-          @toggle-active="handleToggleActive"
-          @test="handleTest"
-        />
-      </el-tab-pane>
-      
-      <el-tab-pane :label="$t('aiConfig.tabs.image')" name="image">
-        <ConfigList 
-          :configs="configs" 
-          :loading="loading"
-          :show-test-button="false"
-          @edit="handleEdit"
-          @delete="handleDelete"
-          @toggle-active="handleToggleActive"
-        />
-      </el-tab-pane>
-      
-      <el-tab-pane :label="$t('aiConfig.tabs.video')" name="video">
-        <ConfigList 
-          :configs="configs" 
-          :loading="loading"
-          :show-test-button="false"
-          @edit="handleEdit"
-          @delete="handleDelete"
-          @toggle-active="handleToggleActive"
-        />
-      </el-tab-pane>
+          <el-tab-pane :label="$t('aiConfig.tabs.text')" name="text">
+            <ConfigList 
+              :configs="configs" 
+              :loading="loading"
+              :show-test-button="true"
+              @edit="handleEdit"
+              @delete="handleDelete"
+              @toggle-active="handleToggleActive"
+              @test="handleTest"
+            />
+          </el-tab-pane>
+          
+          <el-tab-pane :label="$t('aiConfig.tabs.image')" name="image">
+            <ConfigList 
+              :configs="configs" 
+              :loading="loading"
+              :show-test-button="false"
+              @edit="handleEdit"
+              @delete="handleDelete"
+              @toggle-active="handleToggleActive"
+            />
+          </el-tab-pane>
+          
+          <el-tab-pane :label="$t('aiConfig.tabs.video')" name="video">
+            <ConfigList 
+              :configs="configs" 
+              :loading="loading"
+              :show-test-button="false"
+              @edit="handleEdit"
+              @delete="handleDelete"
+              @toggle-active="handleToggleActive"
+            />
+          </el-tab-pane>
         </el-tabs>
       </div>
 
