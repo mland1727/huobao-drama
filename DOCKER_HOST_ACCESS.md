@@ -33,20 +33,20 @@ ollama serve
 
 ### 2. 前端 AI 服务配置
 
-| 字段 | 值 |
-|------|-----|
+| 字段       | 值                                      |
+|----------|----------------------------------------|
 | Base URL | `http://host.docker.internal:11434/v1` |
-| Provider | `openai` |
-| Model | `qwen2.5:latest` |
-| API Key | `ollama` 或留空 |
+| Provider | `openai`                               |
+| Model    | `qwen2.5:latest`                       |
+| API Key  | `ollama` 或留空                           |
 
 ### 3. 其他服务端口
 
-| 服务 | 默认端口 | Base URL |
-|------|---------|----------|
-| Ollama | 11434 | `http://host.docker.internal:11434/v1` |
+| 服务        | 默认端口 | Base URL |
+|-----------|-------|----------|
+| Ollama    | 11434 | `http://host.docker.internal:11434/v1` |
 | LM Studio | 1234 | `http://host.docker.internal:1234/v1` |
-| vLLM | 8000 | `http://host.docker.internal:8000/v1` |
+| vLLM      | 8000 | `http://host.docker.internal:8000/v1` |
 
 ## 验证和故障排查
 
