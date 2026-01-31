@@ -364,6 +364,7 @@ func (s *AIService) GetConfigForModel(serviceType string, modelName string) (*mo
 	return nil, errors.New("no active config found for model: " + modelName)
 }
 
+// GetAIClient 根据服务类型获取对应的AI客户端
 func (s *AIService) GetAIClient(serviceType string) (ai.AIClient, error) {
 	config, err := s.GetDefaultConfig(serviceType)
 	if err != nil {
@@ -428,7 +429,7 @@ func (s *AIService) GetAIClientForModel(serviceType string, modelName string) (a
 func (s *AIService) GenerateText(prompt string, systemPrompt string, options ...func(*ai.ChatCompletionRequest)) (string, error) {
 	client, err := s.GetAIClient("text")
 	if err != nil {
-		return "", fmt.Errorf("failed to get AI client: %w", err)
+		return "", fmt.Errorf("获取AIClient客户端失败: %w", err)
 	}
 
 	return client.GenerateText(prompt, systemPrompt, options...)

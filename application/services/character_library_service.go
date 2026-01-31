@@ -502,13 +502,20 @@ func (s *CharacterLibraryService) ExtractCharactersFromScript(episodeID uint) (s
 		return "", fmt.Errorf("创建任务失败: %w", err)
 	}
 
+	fmt.Printf("创建角色提取任务完成，开始进行任务: %s", task.ID)
 	go s.processCharacterExtraction(task.ID, episode)
 
 	return task.ID, nil
 }
 
+// processCharacterExtraction 处理角色提取任务
 func (s *CharacterLibraryService) processCharacterExtraction(taskID string, episode models.Episode) {
-	s.taskService.UpdateTaskStatus(taskID, "processing", 0, "正在分析剧本...")
+	fmt.Printf("开始处理角色提取任务: %s", taskID)
+	err := s.taskService.UpdateTaskStatus(taskID, "processing", 0, "正在分析剧本...")
+	if err != nil {
+		fmt.Printf("处理任务失败: %v", err)
+		return
+	}
 
 	script := ""
 	if episode.ScriptContent != nil {
@@ -520,11 +527,14 @@ func (s *CharacterLibraryService) processCharacterExtraction(taskID string, epis
 
 	response, err := s.aiService.GenerateText(userPrompt, prompt, ai.WithMaxTokens(3000))
 	if err != nil {
-		s.taskService.UpdateTaskError(taskID, err)
+		_ = s.taskService.UpdateTaskError(taskID, err)
 		return
 	}
 
-	s.taskService.UpdateTaskStatus(taskID, "processing", 50, "正在整理角色数据...")
+	err = s.taskService.UpdateTaskStatus(taskID, "processing", 50, "正在整理角色数据...")
+	if err != nil {
+		return
+	}
 
 	var extractedCharacters []struct {
 		Name        string `json:"name"`
@@ -536,7 +546,7 @@ func (s *CharacterLibraryService) processCharacterExtraction(taskID string, epis
 
 	if err := utils.SafeParseAIJSON(response, &extractedCharacters); err != nil {
 		s.log.Errorw("Failed to parse AI response for characters", "error", err, "response", response)
-		s.taskService.UpdateTaskError(taskID, fmt.Errorf("解析AI响应失败"))
+		_ = s.taskService.UpdateTaskError(taskID, fmt.Errorf("解析AI响应失败"))
 		return
 	}
 

@@ -41,6 +41,7 @@ type GenerateCharactersRequest struct {
 	Model       string  `json:"model"` // 指定使用的文本模型
 }
 
+// GenerateCharacters 生成角色
 func (s *ScriptGenerationService) GenerateCharacters(req *GenerateCharactersRequest) (string, error) {
 	var drama models.Drama
 	if err := s.db.Where("id = ? ", req.DramaID).First(&drama).Error; err != nil {
@@ -67,7 +68,11 @@ func (s *ScriptGenerationService) GenerateCharacters(req *GenerateCharactersRequ
 // processCharacterGeneration 异步处理角色生成
 func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req *GenerateCharactersRequest) {
 	// 更新任务状态为处理中
-	s.taskService.UpdateTaskStatus(taskID, "processing", 0, "正在生成角色...")
+	err := s.taskService.UpdateTaskStatus(taskID, "processing", 0, "正在生成角色...")
+	if err != nil {
+		fmt.Printf("生成角色任务更新状态失败: %v\n", err)
+		return
+	}
 
 	count := req.Count
 	if count == 0 {
@@ -76,12 +81,14 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 
 	systemPrompt := s.promptI18n.GetCharacterExtractionPrompt()
 
+	// 生成角色时输入的描述信息
 	outlineText := req.Outline
+	// 如果没有描述信息，则使用剧本的基本信息
 	if outlineText == "" {
 		var drama models.Drama
 		if err := s.db.Where("id = ? ", req.DramaID).First(&drama).Error; err != nil {
-			s.log.Errorw("Drama not found during character generation", "error", err, "drama_id", req.DramaID)
-			s.taskService.UpdateTaskStatus(taskID, "failed", 0, "剧本信息不存在")
+			s.log.Errorw("未找到章节信息", "error", err, "drama_id", req.DramaID)
+			_ = s.taskService.UpdateTaskStatus(taskID, "failed", 0, "剧本信息不存在")
 			return
 		}
 		outlineText = s.promptI18n.FormatUserPrompt("drama_info_template", drama.Title, drama.Description, drama.Genre)
@@ -96,7 +103,6 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 
 	// 如果指定了模型，使用指定的模型；否则使用默认配置
 	var text string
-	var err error
 	if req.Model != "" {
 		s.log.Infow("Using specified model for character generation", "model", req.Model, "task_id", taskID)
 		client, getErr := s.aiService.GetAIClientForModel("text", req.Model)
@@ -107,12 +113,13 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 			text, err = client.GenerateText(userPrompt, systemPrompt, ai.WithTemperature(temperature))
 		}
 	} else {
+		// 使用默认模型
 		text, err = s.aiService.GenerateText(userPrompt, systemPrompt, ai.WithTemperature(temperature))
 	}
 
 	if err != nil {
-		s.log.Errorw("Failed to generate characters", "error", err, "task_id", taskID)
-		s.taskService.UpdateTaskStatus(taskID, "failed", 0, "AI生成失败: "+err.Error())
+		s.log.Errorw("AI生成角色失败", "error", err, "task_id", taskID)
+		_ = s.taskService.UpdateTaskStatus(taskID, "failed", 0, "AI生成角色失败: "+err.Error())
 		return
 	}
 

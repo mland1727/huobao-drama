@@ -23,6 +23,7 @@ func NewScriptGenerationHandler(db *gorm.DB, cfg *config.Config, log *logger.Log
 	}
 }
 
+// GenerateCharacters 处理生成角色的请求
 func (h *ScriptGenerationHandler) GenerateCharacters(c *gin.Context) {
 	var req services.GenerateCharactersRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -16,7 +16,7 @@ type AsyncTask struct {
 	Status       string       `json:"status" gorm:"type:varchar(20);not null;default:'pending';index:idx_async_tasks_status;comment:pending, processing, completed, failed"`
 	Progress     int          `json:"progress" gorm:"not null;default:0;comment:进度百分比 0-100"`
 	Result       *string      `json:"result" gorm:"type:json"`
-	ErrorMsg     *string      `json:"error_msg" gorm:"type:text"`
+	Message      *string      `json:"message" gorm:"type:text"`
 	CreatedAt    time.Time    `json:"created_at" gorm:"not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt    time.Time    `json:"updated_at" gorm:"not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
 	CompletedAt  *time.Time   `json:"completed_at"`
