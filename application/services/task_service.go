@@ -42,7 +42,7 @@ func (s *TaskService) CreateTask(taskType, resourceID string) (*models.AsyncTask
 
 // UpdateTaskStatus 更新任务状态
 func (s *TaskService) UpdateTaskStatus(taskID, status string, progress int, message string) error {
-	updates := map[string]interface{}{
+	updates := map[string]any{
 		"status":     status,
 		"progress":   progress,
 		"message":    message,
@@ -64,7 +64,7 @@ func (s *TaskService) UpdateTaskError(taskID string, err error) error {
 	now := time.Now()
 	return s.db.Model(&models.AsyncTask{}).
 		Where("id = ?", taskID).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"status":       "failed",
 			"error":        err.Error(),
 			"progress":     0,
@@ -83,7 +83,7 @@ func (s *TaskService) UpdateTaskResult(taskID string, result interface{}) error 
 	now := time.Now()
 	return s.db.Model(&models.AsyncTask{}).
 		Where("id = ?", taskID).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"status":       "completed",
 			"progress":     100,
 			"result":       string(resultJSON),
