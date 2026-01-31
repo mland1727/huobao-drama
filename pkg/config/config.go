@@ -13,6 +13,7 @@ type Config struct {
 	Storage  StorageConfig  `mapstructure:"storage"`
 	AI       AIConfig       `mapstructure:"ai"`
 	Style    StyleConfig    `mapstructure:"style"`
+	HuoShan  HuoShanConfig  `mapstructure:"huoshan"`
 }
 
 type AppConfig struct {
@@ -76,6 +77,10 @@ type StyleConfig struct {
 	DefaultSceneRatio string `mapstructure:"default_scene_ratio"`
 	// 默认角色比例
 	DefaultRoleRatio string `mapstructure:"default_role_ratio"`
+}
+
+type HuoShanConfig struct {
+	AIAPIKey string `mapstructure:"ai_api_key"`
 }
 
 func LoadConfig() (*Config, error) {
