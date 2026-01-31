@@ -301,7 +301,7 @@ const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
     {
       id: 'volcengine', 
       name: '火山引擎', 
-      models: ['doubao-seed-1.8', 'doubao-seed-1.6']
+      models: ['doubao-seed-1.8', 'doubao-seed-1.6', 'doubao-seed-1.6-lite', 'doubao-seed-1.6-flash', 'doubao-1.5-pro-32k']
     },
   ],
   image: [
