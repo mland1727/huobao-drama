@@ -343,24 +343,25 @@ CREATE TABLE `frame_prompts` (
 
 DROP TABLE IF EXISTS `async_tasks`;
 CREATE TABLE `async_tasks` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `task_type` VARCHAR(50) NOT NULL COMMENT 'script_generation, image_generation, video_generation, etc.',
-  `drama_id` BIGINT UNSIGNED,
-  `episode_id` BIGINT UNSIGNED,
-  `storyboard_id` BIGINT UNSIGNED,
-  `status` VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT 'pending, processing, completed, failed',
-  `progress` INT NOT NULL DEFAULT 0 COMMENT '进度百分比 0-100',
-  `result` JSON,
-  `error_msg` TEXT,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `completed_at` TIMESTAMP NULL DEFAULT NULL,
-  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_async_tasks_task_type` (`task_type`),
-  KEY `idx_async_tasks_drama_id` (`drama_id`),
-  KEY `idx_async_tasks_status` (`status`),
-  KEY `idx_async_tasks_deleted_at` (`deleted_at`)
+   `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+   `type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'script_generation, image_generation, video_generation, etc.',
+   `drama_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+   `episode_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+   `storyboard_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+   `prop_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '道具图片任务id',
+   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' COMMENT 'pending - 等待中 , processing - 处理中, completed - 已完成, failed - 处理失败',
+   `progress` int NOT NULL DEFAULT '0' COMMENT '进度百分比 0-100',
+   `result` json DEFAULT NULL,
+   `error_msg` text COLLATE utf8mb4_unicode_ci,
+   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+   `completed_at` timestamp NULL DEFAULT NULL,
+   `deleted_at` timestamp NULL DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   KEY `idx_async_tasks_type` (`type`),
+   KEY `idx_async_tasks_drama_id` (`drama_id`),
+   KEY `idx_async_tasks_status` (`status`),
+   KEY `idx_async_tasks_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ======================================

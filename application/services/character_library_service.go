@@ -10,6 +10,7 @@ import (
 	"github.com/drama-generator/backend/pkg/config"
 	"github.com/drama-generator/backend/pkg/logger"
 	"github.com/drama-generator/backend/pkg/utils"
+	"github.com/spf13/cast"
 	"gorm.io/gorm"
 )
 
@@ -493,7 +494,10 @@ func (s *CharacterLibraryService) ExtractCharactersFromScript(episodeID uint) (s
 		return "", fmt.Errorf("剧本内容为空")
 	}
 
-	task, err := s.taskService.CreateTask("character_extraction", fmt.Sprintf("%d", episode.DramaID))
+	taskParam := models.AsyncTask{
+		DramaId: cast.ToString(episode.DramaID),
+	}
+	task, err := s.taskService.CreateTask("character_extraction", taskParam)
 	if err != nil {
 		return "", fmt.Errorf("创建任务失败: %w", err)
 	}

@@ -1,23 +1,28 @@
 package models
 
 import (
+	"database/sql"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // AsyncTask 异步任务模型
 type AsyncTask struct {
-	ID          string         `gorm:"primaryKey;size:36" json:"id"`
-	Type        string         `gorm:"size:50;not null;index" json:"type"`   // 任务类型：storyboard_generation
-	Status      string         `gorm:"size:20;not null;index" json:"status"` // pending, processing, completed, failed
-	Progress    int            `gorm:"default:0" json:"progress"`            // 0-100
-	Message     string         `gorm:"size:500" json:"message,omitempty"`    // 当前状态消息
-	Error       string         `gorm:"type:text" json:"error,omitempty"`     // 错误信息
-	Result      string         `gorm:"type:text" json:"result,omitempty"`    // JSON格式的结果数据
-	ResourceID  string         `gorm:"size:36;index" json:"resource_id"`     // 关联资源ID（如episode_id）
-	CreatedAt   time.Time      `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt   time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
-	CompletedAt *time.Time     `json:"completed_at,omitempty"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	ID           string       `json:"id" gorm:"primaryKey;type:varchar(64)"`
+	Type         string       `json:"type" gorm:"type:varchar(50);not null;index:idx_async_tasks_type;comment:script_generation, image_generation, video_generation, etc."`
+	DramaId      string       `json:"drama_id" gorm:"type:varchar(64);not null;default:'';index:idx_async_tasks_drama_id"`
+	EpisodeId    string       `json:"episode_id" gorm:"type:varchar(64);not null;default:''"`
+	StoryboardId string       `json:"storyboard_id" gorm:"type:varchar(64);not null;default:''"`
+	PropId       string       `json:"prop_id" gorm:"type:varchar(64);not null;default:'';comment:道具图片任务id"`
+	Status       string       `json:"status" gorm:"type:varchar(20);not null;default:'pending';index:idx_async_tasks_status;comment:pending, processing, completed, failed"`
+	Progress     int          `json:"progress" gorm:"not null;default:0;comment:进度百分比 0-100"`
+	Result       *string      `json:"result" gorm:"type:json"`
+	ErrorMsg     *string      `json:"error_msg" gorm:"type:text"`
+	CreatedAt    time.Time    `json:"created_at" gorm:"not null;default:CURRENT_TIMESTAMP"`
+	UpdatedAt    time.Time    `json:"updated_at" gorm:"not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
+	CompletedAt  *time.Time   `json:"completed_at"`
+	DeletedAt    sql.NullTime `json:"deleted_at" gorm:"index:idx_async_tasks_deleted_at"`
+}
+
+func (AsyncTask) TableName() string {
+	return "async_tasks"
 }

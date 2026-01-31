@@ -10,6 +10,7 @@ import (
 	"github.com/drama-generator/backend/pkg/config"
 	"github.com/drama-generator/backend/pkg/logger"
 	"github.com/drama-generator/backend/pkg/utils"
+	"github.com/spf13/cast"
 	"gorm.io/gorm"
 )
 
@@ -66,7 +67,10 @@ func (s *PropService) ExtractPropsFromScript(episodeID uint) (string, error) {
 		return "", fmt.Errorf("episode not found: %w", err)
 	}
 
-	task, err := s.taskService.CreateTask("prop_extraction", fmt.Sprintf("%d", episodeID))
+	taskParam := models.AsyncTask{
+		EpisodeId: cast.ToString(episodeID),
+	}
+	task, err := s.taskService.CreateTask("prop_extraction", taskParam)
 	if err != nil {
 		return "", err
 	}
@@ -151,7 +155,10 @@ func (s *PropService) GeneratePropImage(propID uint) (string, error) {
 	}
 
 	// 2. 创建任务
-	task, err := s.taskService.CreateTask("prop_image_generation", fmt.Sprintf("%d", propID))
+	taskParam := models.AsyncTask{
+		PropId: cast.ToString(propID),
+	}
+	task, err := s.taskService.CreateTask("prop_image_generation", taskParam)
 	if err != nil {
 		return "", err
 	}

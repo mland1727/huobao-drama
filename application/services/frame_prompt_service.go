@@ -12,22 +12,22 @@ import (
 
 // FramePromptService 处理帧提示词生成
 type FramePromptService struct {
-	db         *gorm.DB
-	aiService  *AIService
-	log        *logger.Logger
-	config     *config.Config
-	promptI18n *PromptI18n
+	db          *gorm.DB
+	aiService   *AIService
+	log         *logger.Logger
+	config      *config.Config
+	promptI18n  *PromptI18n
 	taskService *TaskService
 }
 
 // NewFramePromptService 创建帧提示词服务
 func NewFramePromptService(db *gorm.DB, cfg *config.Config, log *logger.Logger) *FramePromptService {
 	return &FramePromptService{
-		db:         db,
-		aiService:  NewAIService(db, log),
-		log:        log,
-		config:     cfg,
-		promptI18n: NewPromptI18n(cfg),
+		db:          db,
+		aiService:   NewAIService(db, log),
+		log:         log,
+		config:      cfg,
+		promptI18n:  NewPromptI18n(cfg),
 		taskService: NewTaskService(db, log),
 	}
 }
@@ -79,7 +79,10 @@ func (s *FramePromptService) GenerateFramePrompt(req GenerateFramePromptRequest,
 	}
 
 	// 创建任务
-	task, err := s.taskService.CreateTask("frame_prompt_generation", req.StoryboardID)
+	taskParams := models.AsyncTask{
+		StoryboardId: req.StoryboardID,
+	}
+	task, err := s.taskService.CreateTask("frame_prompt_generation", taskParams)
 	if err != nil {
 		s.log.Errorw("Failed to create frame prompt generation task", "error", err, "storyboard_id", req.StoryboardID)
 		return "", fmt.Errorf("创建任务失败: %w", err)

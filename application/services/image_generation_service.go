@@ -14,6 +14,7 @@ import (
 	"github.com/drama-generator/backend/pkg/image"
 	"github.com/drama-generator/backend/pkg/logger"
 	"github.com/drama-generator/backend/pkg/utils"
+	"github.com/spf13/cast"
 	"gorm.io/gorm"
 )
 
@@ -731,7 +732,10 @@ func (s *ImageGenerationService) ExtractBackgroundsForEpisode(episodeID string, 
 	}
 
 	// 创建任务
-	task, err := s.taskService.CreateTask("background_extraction", episodeID)
+	taskParam := models.AsyncTask{
+		EpisodeId: cast.ToString(episodeID),
+	}
+	task, err := s.taskService.CreateTask("background_extraction", taskParam)
 	if err != nil {
 		s.log.Errorw("Failed to create background extraction task", "error", err, "episode_id", episodeID)
 		return "", fmt.Errorf("创建任务失败: %w", err)

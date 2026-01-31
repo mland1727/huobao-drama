@@ -13,21 +13,21 @@ import (
 )
 
 type ScriptGenerationService struct {
-	db         *gorm.DB
-	aiService  *AIService
-	log        *logger.Logger
-	config     *config.Config
-	promptI18n *PromptI18n
+	db          *gorm.DB
+	aiService   *AIService
+	log         *logger.Logger
+	config      *config.Config
+	promptI18n  *PromptI18n
 	taskService *TaskService
 }
 
 func NewScriptGenerationService(db *gorm.DB, cfg *config.Config, log *logger.Logger) *ScriptGenerationService {
 	return &ScriptGenerationService{
-		db:         db,
-		aiService:  NewAIService(db, log),
-		log:        log,
-		config:     cfg,
-		promptI18n: NewPromptI18n(cfg),
+		db:          db,
+		aiService:   NewAIService(db, log),
+		log:         log,
+		config:      cfg,
+		promptI18n:  NewPromptI18n(cfg),
 		taskService: NewTaskService(db, log),
 	}
 }
@@ -48,7 +48,10 @@ func (s *ScriptGenerationService) GenerateCharacters(req *GenerateCharactersRequ
 	}
 
 	// 创建任务
-	task, err := s.taskService.CreateTask("character_generation", req.DramaID)
+	taskParams := models.AsyncTask{
+		DramaId: req.DramaID,
+	}
+	task, err := s.taskService.CreateTask("character_generation", taskParams)
 	if err != nil {
 		s.log.Errorw("Failed to create character generation task", "error", err)
 		return "", fmt.Errorf("创建任务失败: %w", err)

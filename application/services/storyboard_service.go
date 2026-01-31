@@ -321,7 +321,10 @@ func (s *StoryboardService) GenerateStoryboard(episodeID string, model string) (
 - 避免抽象词汇，使用具象的视觉化描述`, systemPrompt, scriptLabel, scriptContent, taskLabel, taskInstruction, charListLabel, characterList, charConstraint, sceneListLabel, sceneList, sceneConstraint)
 
 	// 创建异步任务
-	task, err := s.taskService.CreateTask("storyboard_generation", episodeID)
+	taskParams := models.AsyncTask{
+		EpisodeId: episodeID,
+	}
+	task, err := s.taskService.CreateTask("storyboard_generation", taskParams)
 	if err != nil {
 		s.log.Errorw("Failed to create task", "error", err)
 		return "", fmt.Errorf("创建任务失败: %w", err)

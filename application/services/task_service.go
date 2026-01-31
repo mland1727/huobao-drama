@@ -24,13 +24,16 @@ func NewTaskService(db *gorm.DB, log *logger.Logger) *TaskService {
 }
 
 // CreateTask 创建新任务
-func (s *TaskService) CreateTask(taskType, resourceID string) (*models.AsyncTask, error) {
+func (s *TaskService) CreateTask(taskType string, taskParam models.AsyncTask) (*models.AsyncTask, error) {
 	task := &models.AsyncTask{
-		ID:         uuid.New().String(),
-		Type:       taskType,
-		Status:     "pending",
-		Progress:   0,
-		ResourceID: resourceID,
+		ID:           uuid.New().String(),
+		Type:         taskType,
+		Status:       "pending",
+		Progress:     0,
+		DramaId:      taskParam.DramaId,
+		EpisodeId:    taskParam.EpisodeId,
+		StoryboardId: taskParam.StoryboardId,
+		PropId:       taskParam.PropId,
 	}
 
 	if err := s.db.Create(task).Error; err != nil {
