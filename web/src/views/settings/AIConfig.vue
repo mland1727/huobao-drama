@@ -72,7 +72,7 @@
           <el-input v-model="form.name" :placeholder="$t('aiConfig.form.namePlaceholder')" />
         </el-form-item>
 
-        <el-form-item :label="$t('aiConfig.form.provider')" prop="provider">
+        <el-form-item label="厂商" prop="provider">
           <el-select 
             v-model="form.provider" 
             :placeholder="$t('aiConfig.form.providerPlaceholder')"
@@ -87,7 +87,7 @@
               :disabled="provider.disabled"
             />
           </el-select>
-          <div class="form-tip">{{ $t('aiConfig.form.providerTip') }}</div>
+          <div class="form-tip">选择AI服务提供商</div>
         </el-form-item>
 
         <el-form-item :label="$t('aiConfig.form.priority')" prop="priority">

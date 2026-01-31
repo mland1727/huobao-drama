@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="$t('aiConfig.title')"
+    title="AI 服务配置"
     width="900px"
     :close-on-click-modal="true"
     destroy-on-close
@@ -10,15 +10,15 @@
     <!-- Dialog Header Actions -->
     <template #header>
       <div class="dialog-header">
-        <span class="dialog-title">{{ $t('aiConfig.title') }}</span>
+        <span class="dialog-title">AI 服务配置</span>
         <div class="header-actions">
           <el-button type="success" size="small" @click="showQuickSetupDialog">
             <el-icon><MagicStick /></el-icon>
-            <span>一键配置火宝</span>
+            <span>一键配置</span>
           </el-button>
           <el-button type="primary" size="small" @click="showCreateDialog">
             <el-icon><Plus /></el-icon>
-            <span>{{ $t('aiConfig.addConfig') }}</span>
+            <span>添加配置</span>
           </el-button>
         </div>
       </div>
@@ -26,7 +26,7 @@
 
     <!-- Tabs -->
     <el-tabs v-model="activeTab" @tab-change="handleTabChange" class="config-tabs">
-      <el-tab-pane :label="$t('aiConfig.tabs.text')" name="text">
+      <el-tab-pane label="文本服务" name="text">
         <ConfigList 
           :configs="configs" 
           :loading="loading"
@@ -38,7 +38,7 @@
         />
       </el-tab-pane>
       
-      <el-tab-pane :label="$t('aiConfig.tabs.image')" name="image">
+      <el-tab-pane label="图片服务" name="image">
         <ConfigList 
           :configs="configs" 
           :loading="loading"
@@ -49,7 +49,7 @@
         />
       </el-tab-pane>
       
-      <el-tab-pane :label="$t('aiConfig.tabs.video')" name="video">
+      <el-tab-pane label="视频服务" name="video">
         <ConfigList 
           :configs="configs" 
           :loading="loading"
@@ -110,7 +110,7 @@
     <!-- Edit/Create Sub-Dialog -->
     <el-dialog
       v-model="editDialogVisible"
-      :title="isEdit ? $t('aiConfig.editConfig') : $t('aiConfig.addConfig')"
+      :title="isEdit ? '编辑配置' : '添加配置'"
       width="600px"
       :close-on-click-modal="true"
       append-to-body
@@ -121,14 +121,14 @@
         :rules="rules"
         label-width="100px"
       >
-        <el-form-item :label="$t('aiConfig.form.name')" prop="name">
-          <el-input v-model="form.name" :placeholder="$t('aiConfig.form.namePlaceholder')" />
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入名称" />
         </el-form-item>
 
-        <el-form-item :label="$t('aiConfig.form.provider')" prop="provider">
+        <el-form-item label="厂商" prop="provider">
           <el-select 
             v-model="form.provider" 
-            :placeholder="$t('aiConfig.form.providerPlaceholder')"
+            placeholder="请选择厂商"
             @change="handleProviderChange"
             style="width: 100%"
           >
@@ -140,10 +140,10 @@
               :disabled="provider.disabled"
             />
           </el-select>
-          <div class="form-tip">{{ $t('aiConfig.form.providerTip') }}</div>
+          <div class="form-tip">选择AI服务提供商</div>
         </el-form-item>
 
-        <el-form-item :label="$t('aiConfig.form.priority')" prop="priority">
+        <el-form-item label="优先级" prop="priority">
           <el-input-number 
             v-model="form.priority" 
             :min="0" 
@@ -151,13 +151,13 @@
             :step="1"
             style="width: 100%"
           />
-          <div class="form-tip">{{ $t('aiConfig.form.priorityTip') }}</div>
+          <div class="form-tip">优先级越高，优先使用该配置</div>
         </el-form-item>
 
-        <el-form-item :label="$t('aiConfig.form.model')" prop="model">
+        <el-form-item label="模型" prop="model">
           <el-select 
             v-model="form.model" 
-            :placeholder="$t('aiConfig.form.modelPlaceholder')"
+            placeholder="请选择模型"
             multiple
             filterable
             allow-create
@@ -173,29 +173,29 @@
               :value="model"
             />
           </el-select>
-          <div class="form-tip">{{ $t('aiConfig.form.modelTip') }}</div>
+          <div class="form-tip">选择模型</div>
         </el-form-item>
 
-        <el-form-item :label="$t('aiConfig.form.baseUrl')" prop="base_url">
-          <el-input v-model="form.base_url" :placeholder="$t('aiConfig.form.baseUrlPlaceholder')" />
+        <el-form-item label="基础 URL" prop="base_url">
+          <el-input v-model="form.base_url" placeholder="请输入基础 URL" />
           <div class="form-tip">
-            {{ $t('aiConfig.form.baseUrlTip') }}
+            基础 URL 用于构建完整的 API 端点
             <br>
-            {{ $t('aiConfig.form.fullEndpoint') }}: {{ fullEndpointExample }}
+            完整端点示例: {{ fullEndpointExample }}
           </div>
         </el-form-item>
 
-        <el-form-item :label="$t('aiConfig.form.apiKey')" prop="api_key">
+        <el-form-item label="API Key" prop="api_key">
           <el-input 
             v-model="form.api_key" 
             type="password" 
             show-password
-            :placeholder="$t('aiConfig.form.apiKeyPlaceholder')"
+            placeholder="请输入 API Key"
           />
-          <div class="form-tip">{{ $t('aiConfig.form.apiKeyTip') }}</div>
+          <div class="form-tip">请输入您的 API Key，用于身份验证</div>
         </el-form-item>
 
-        <el-form-item v-if="isEdit" :label="$t('aiConfig.form.isActive')">
+        <el-form-item v-if="isEdit" label="是否激活">
           <el-switch v-model="form.is_active" />
         </el-form-item>
       </el-form>
@@ -210,10 +210,10 @@
             没有 API Key？点击注册
           </a> -->
           <div class="dialog-footer">
-            <el-button @click="editDialogVisible = false">{{ $t('common.cancel') }}</el-button>
-            <el-button v-if="form.service_type === 'text'" @click="testConnection" :loading="testing">{{ $t('aiConfig.actions.test') }}</el-button>
+            <el-button @click="editDialogVisible = false">取消</el-button>
+            <el-button v-if="form.service_type === 'text'" @click="testConnection" :loading="testing">测试连接</el-button>
             <el-button type="primary" @click="handleSubmit" :loading="submitting">
-              {{ isEdit ? $t('common.save') : $t('common.create') }}
+              {{ isEdit ? '保存' : '创建' }}
             </el-button>
           </div>
         </div>
@@ -297,7 +297,12 @@ const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
         'gemini-2.5-flash-lite',
         'gemini-3-pro-preview'
       ]
-    }
+    },
+    {
+      id: 'volcengine', 
+      name: '火山引擎', 
+      models: ['doubao-seed-1.8', 'doubao-seed-1.6']
+    },
   ],
   image: [
     { 
