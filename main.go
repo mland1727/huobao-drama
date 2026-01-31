@@ -27,8 +27,16 @@ func main() {
 
 	logr := logger.NewLogger(cfg.App.Debug)
 	defer logr.Sync()
-
 	logr.Info("Starting Drama Generator API Server...")
+
+	// logr.Infow("Database configuration",
+	// 	"type", cfg.Database.Type,
+	// 	"host", cfg.Database.Host,
+	// 	"port", cfg.Database.Port,
+	// 	"database", cfg.Database.Database,
+	// 	"dsn", cfg.Database.DSN(),
+	// )
+
 	db, err := database.NewDatabase(cfg.Database)
 	if err != nil {
 		logr.Fatal("Failed to connect to database", "error", err)
