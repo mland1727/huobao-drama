@@ -3,7 +3,6 @@ package ai
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/volcengine/volcengine-go-sdk/service/arkruntime"
 	"github.com/volcengine/volcengine-go-sdk/service/arkruntime/model"
@@ -20,7 +19,7 @@ type VolcengineClient struct {
 func NewVolcengineClient(baseURL, apiKey, model string) *VolcengineClient {
 	apiClient := arkruntime.NewClientWithApiKey(
 		// 从环境变量中获取您的 API Key。此为默认方式，您可根据需要进行修改
-		os.Getenv(apiKey),
+		apiKey,
 		// 此为默认路径，您可根据业务所在地域进行配置
 		arkruntime.WithBaseUrl(baseURL),
 	)
