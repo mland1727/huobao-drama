@@ -12,10 +12,11 @@
       <div class="dialog-header">
         <span class="dialog-title">AI 服务配置</span>
         <div class="header-actions">
-          <el-button type="success" size="small" @click="showQuickSetupDialog">
+          <!-- <el-button type="success" size="small" @click="showQuickSetupDialog">
             <el-icon><MagicStick /></el-icon>
             <span>一键配置</span>
-          </el-button>
+          </el-button> -->
+
           <el-button type="primary" size="small" @click="showCreateDialog">
             <el-icon><Plus /></el-icon>
             <span>添加配置</span>
@@ -50,14 +51,7 @@
       </el-tab-pane>
       
       <el-tab-pane label="视频服务" name="video">
-        <ConfigList 
-          :configs="configs" 
-          :loading="loading"
-          :show-test-button="false"
-          @edit="handleEdit"
-          @delete="handleDelete"
-          @toggle-active="handleToggleActive"
-        />
+        <ConfigList :configs="configs" :loading="loading" :show-test-button="false" @edit="handleEdit" @delete="handleDelete" @toggle-active="handleToggleActive" />
       </el-tab-pane>
     </el-tabs>
 
@@ -108,70 +102,27 @@
     </el-dialog>
 
     <!-- Edit/Create Sub-Dialog -->
-    <el-dialog
-      v-model="editDialogVisible"
-      :title="isEdit ? '编辑配置' : '添加配置'"
-      width="600px"
-      :close-on-click-modal="true"
-      append-to-body
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
+    <el-dialog v-model="editDialogVisible" :title="isEdit ? '编辑配置' : '添加配置'" width="600px" :close-on-click-modal="true" append-to-body >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" >
         <el-form-item label="名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入名称" />
         </el-form-item>
 
         <el-form-item label="厂商" prop="provider">
-          <el-select 
-            v-model="form.provider" 
-            placeholder="请选择厂商"
-            @change="handleProviderChange"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="provider in availableProviders"
-              :key="provider.id"
-              :label="provider.name"
-              :value="provider.id"
-              :disabled="provider.disabled"
-            />
+          <el-select v-model="form.provider" placeholder="请选择厂商" @change="handleProviderChange" style="width: 100%" >
+            <el-option v-for="provider in availableProviders" :key="provider.id" :label="provider.name" :value="provider.id" :disabled="provider.disabled" />
           </el-select>
           <div class="form-tip">选择AI服务提供商</div>
         </el-form-item>
 
         <el-form-item label="优先级" prop="priority">
-          <el-input-number 
-            v-model="form.priority" 
-            :min="0" 
-            :max="100"
-            :step="1"
-            style="width: 100%"
-          />
+          <el-input-number v-model="form.priority" :min="0" :max="100" :step="1" style="width: 100%" />
           <div class="form-tip">优先级越高，优先使用该配置</div>
         </el-form-item>
 
         <el-form-item label="模型" prop="model">
-          <el-select 
-            v-model="form.model" 
-            placeholder="请选择模型"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            collapse-tags
-            collapse-tags-tooltip
-            style="width: 100%"
-          >
-            <el-option
-              v-for="model in availableModels"
-              :key="model"
-              :label="model"
-              :value="model"
-            />
+          <el-select v-model="form.model" placeholder="请选择模型" multiple filterable allow-create default-first-option collapse-tags collapse-tags-tooltip style="width: 100%">
+            <el-option v-for="model in availableModels" :key="model" :label="model" :value="model" />
           </el-select>
           <div class="form-tip">选择模型</div>
         </el-form-item>
@@ -186,12 +137,7 @@
         </el-form-item>
 
         <el-form-item label="API Key" prop="api_key">
-          <el-input 
-            v-model="form.api_key" 
-            type="password" 
-            show-password
-            placeholder="请输入 API Key"
-          />
+          <el-input v-model="form.api_key" type="password" show-password placeholder="请输入 API Key" />
           <div class="form-tip">请输入您的 API Key，用于身份验证</div>
         </el-form-item>
 
@@ -276,33 +222,13 @@ interface ProviderConfig {
   disabled?: boolean
 }
 
+// 预定义的厂商及其模型配置
 const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
   text: [
     { id: 'openai', name: 'OpenAI', models: ['gpt-5.2', 'gemini-3-pro-preview'] },
-    { 
-      id: 'chatfire', 
-      name: 'Chatfire', 
-      models: [
-        'gemini-3-pro-preview',
-        'claude-sonnet-4-5-20250929',
-        'doubao-seed-1-8-251228'
-      ]
-    },
-    { 
-      id: 'gemini', 
-      name: 'Google Gemini', 
-      models: [
-        'gemini-2.5-pro',
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
-        'gemini-3-pro-preview'
-      ]
-    },
-    {
-      id: 'volcengine', 
-      name: '火山引擎', 
-      models: ['doubao-seed-1.8', 'doubao-seed-1.6', 'doubao-seed-1.6-lite', 'doubao-seed-1.6-flash', 'doubao-1.5-pro-32k']
-    },
+    { id: 'chatfire', name: 'Chatfire', models: ['gemini-3-pro-preview','claude-sonnet-4-5-20250929','doubao-seed-1-8-251228'] },
+    { id: 'gemini', name: 'Google Gemini', models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3-pro-preview'] },
+    { id: 'volcengine', name: '火山引擎', models: ['doubao-seed-1.8', 'doubao-seed-1.6', 'doubao-seed-1-6-lite-251015', 'doubao-seed-1.6-flash', 'doubao-1.5-pro-32k'] },
   ],
   image: [
     { 
@@ -543,7 +469,7 @@ const testConnection = async () => {
       base_url: form.base_url,
       api_key: form.api_key,
       model: form.model,
-      provider: form.provider
+      provider: form.provider // 确保传递厂商信息
     })
     ElMessage.success('连接测试成功！')
   } catch (error: any) {

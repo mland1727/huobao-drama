@@ -284,7 +284,7 @@ func (s *AIService) TestConnection(req *TestConnectionRequest) error {
 	if len(req.Model) > 0 {
 		model = req.Model[0]
 	}
-	s.log.Infow("Using model for test", "model", model, "provider", req.Provider)
+	s.log.Infow("测试AI模型", "model", model, "provider", req.Provider)
 
 	// 根据 provider 参数选择客户端
 	var client ai.AIClient
@@ -293,20 +293,25 @@ func (s *AIService) TestConnection(req *TestConnectionRequest) error {
 	switch req.Provider {
 	case "gemini", "google":
 		// Gemini
-		s.log.Infow("Using Gemini client", "baseURL", req.BaseURL)
+		s.log.Infow("使用 Gemini client", "baseURL", req.BaseURL)
 		endpoint = "/v1beta/models/{model}:generateContent"
 		client = ai.NewGeminiClient(req.BaseURL, req.APIKey, model, endpoint)
 	case "openai", "chatfire":
 		// OpenAI 格式（包括 chatfire 等）
-		s.log.Infow("Using OpenAI-compatible client", "baseURL", req.BaseURL, "provider", req.Provider)
+		s.log.Infow("使用 OpenAI-compatible client", "baseURL", req.BaseURL, "provider", req.Provider)
 		endpoint = req.Endpoint
 		if endpoint == "" {
 			endpoint = "/chat/completions"
 		}
 		client = ai.NewOpenAIClient(req.BaseURL, req.APIKey, model, endpoint)
+	case "volcengine":
+		// 火山引擎视频
+		s.log.Infow("使用火山的模型", "baseURL", req.BaseURL)
+		endpoint = "/contents/generations/tasks"
+		client = ai.NewVolcengineClient(req.BaseURL, req.APIKey, model)
 	default:
 		// 默认使用 OpenAI 格式
-		s.log.Infow("Using default OpenAI-compatible client", "baseURL", req.BaseURL)
+		s.log.Infow("使用默认的 OpenAI-compatible client", "baseURL", req.BaseURL)
 		endpoint = req.Endpoint
 		if endpoint == "" {
 			endpoint = "/chat/completions"
