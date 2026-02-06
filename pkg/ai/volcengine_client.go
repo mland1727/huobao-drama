@@ -17,6 +17,9 @@ type VolcengineClient struct {
 
 // NewVolcengineClient 创建火山引擎 Arkruntime 客户端
 func NewVolcengineClient(baseURL, apiKey, model string) *VolcengineClient {
+	if baseURL == "" {
+		baseURL = "https://ark.cn-beijing.volces.com/api/v3"
+	}
 	apiClient := arkruntime.NewClientWithApiKey(
 		// 从环境变量中获取您的 API Key。此为默认方式，您可根据需要进行修改
 		apiKey,
@@ -68,6 +71,10 @@ func (c *VolcengineClient) GenerateText(prompt string, systemPrompt string, opti
 
 func (c *VolcengineClient) GenerateImage(prompt string, size string, n int) ([]string, error) {
 	return nil, nil
+}
+
+func (c *VolcengineClient) GenerateAsyncImage(prompt string, size string, n int) (*CommonImageGenerationResponse, error) {
+	return nil, fmt.Errorf("GenerateAsyncImage not implemented for Volcengine client")
 }
 
 // TestConnection 测试与火山引擎的连接是否成功

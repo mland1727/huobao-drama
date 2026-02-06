@@ -103,6 +103,16 @@ func (s *AIService) CreateConfig(req *CreateAIConfigRequest) (*models.AIServiceC
 					queryEndpoint = "/generations/tasks/{taskId}"
 				}
 			}
+		case "vidu":
+			switch req.ServiceType {
+			case "video":
+				endpoint = "/v1/video/generate"
+				if queryEndpoint == "" {
+					queryEndpoint = "/v1/video/status/{taskId}"
+				}
+			case "image":
+				endpoint = "/reference2image"
+			}
 		default:
 			// 默认使用 OpenAI 格式
 			switch req.ServiceType {
@@ -216,20 +226,22 @@ func (s *AIService) UpdateConfig(configID uint, req *UpdateAIConfigRequest) (*mo
 				updates["endpoint"] = "/v1beta/models/{model}:generateContent"
 			}
 		case "openai":
-			if serviceType == "text" {
+			switch serviceType {
+			case "text":
 				updates["endpoint"] = "/chat/completions"
-			} else if serviceType == "image" {
+			case "image":
 				updates["endpoint"] = "/images/generations"
-			} else if serviceType == "video" {
+			case "video":
 				updates["endpoint"] = "/videos"
 				updates["query_endpoint"] = "/videos/{taskId}"
 			}
 		case "chatfire":
-			if serviceType == "text" {
+			switch serviceType {
+			case "text":
 				updates["endpoint"] = "/chat/completions"
-			} else if serviceType == "image" {
+			case "image":
 				updates["endpoint"] = "/images/generations"
-			} else if serviceType == "video" {
+			case "video":
 				updates["endpoint"] = "/video/generations"
 				updates["query_endpoint"] = "/video/task/{taskId}"
 			}
@@ -305,10 +317,15 @@ func (s *AIService) TestConnection(req *TestConnectionRequest) error {
 		}
 		client = ai.NewOpenAIClient(req.BaseURL, req.APIKey, model, endpoint)
 	case "volcengine":
-		// 火山引擎视频
+		// 火山引擎
 		s.log.Infow("使用火山的模型", "baseURL", req.BaseURL)
 		endpoint = "/chat/completions"
 		client = ai.NewVolcengineClient(req.BaseURL, req.APIKey, model)
+	case "vidu":
+		// Vidu 视频
+		s.log.Infow("使用 Vidu 的模型", "baseURL", req.BaseURL)
+		endpoint = "/v2/reference2image"
+		client = ai.NewViduClient(req.BaseURL, req.APIKey, model)
 	default:
 		// 默认使用 OpenAI 格式
 		s.log.Infow("使用默认的 OpenAI-compatible client", "baseURL", req.BaseURL)

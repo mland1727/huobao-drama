@@ -330,6 +330,10 @@ func (c *OpenAIClient) GenerateImage(prompt string, size string, n int) ([]strin
 	return urls, nil
 }
 
+func (c *OpenAIClient) GenerateAsyncImage(prompt string, size string, n int) (*CommonImageGenerationResponse, error) {
+	return nil, fmt.Errorf("GenerateAsyncImage not implemented for OpenAI client")
+}
+
 func (c *OpenAIClient) TestConnection() error {
 	fmt.Printf("OpenAI: TestConnection called with BaseURL=%s, Endpoint=%s, Model=%s\n", c.BaseURL, c.Endpoint, c.Model)
 
