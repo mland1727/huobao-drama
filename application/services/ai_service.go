@@ -307,7 +307,7 @@ func (s *AIService) TestConnection(req *TestConnectionRequest) error {
 	case "volcengine":
 		// 火山引擎视频
 		s.log.Infow("使用火山的模型", "baseURL", req.BaseURL)
-		endpoint = "/contents/generations/tasks"
+		endpoint = "/chat/completions"
 		client = ai.NewVolcengineClient(req.BaseURL, req.APIKey, model)
 	default:
 		// 默认使用 OpenAI 格式
@@ -425,6 +425,10 @@ func (s *AIService) GetAIClientForModel(serviceType string, modelName string) (a
 	switch config.Provider {
 	case "gemini", "google":
 		return ai.NewGeminiClient(config.BaseURL, config.APIKey, modelName, endpoint), nil
+	case "volcengine":
+		// 使用火山引擎客户端
+		s.log.Infow("使用火山的模型", "baseURL", config.BaseURL, "APIKey", config.APIKey, "model", modelName)
+		return ai.NewVolcengineClient(config.BaseURL, config.APIKey, modelName), nil
 	default:
 		// openai, chatfire 等其他厂商都使用 OpenAI 格式
 		return ai.NewOpenAIClient(config.BaseURL, config.APIKey, modelName, endpoint), nil

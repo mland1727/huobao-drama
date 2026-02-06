@@ -5,7 +5,7 @@
         <template #left>
           <el-button text @click="$router.back()" class="back-btn">
             <el-icon><ArrowLeft /></el-icon>
-            <span>{{ $t('workflow.backToProject') }}</span>
+            <span>返回项目</span>
           </el-button>
           <h1 class="header-title">{{ $t('workflow.episodeProduction', { number: episodeNumber }) }}</h1>
         </template>
@@ -13,22 +13,22 @@
           <div class="custom-steps">
             <div class="step-item" :class="{ active: currentStep >= 0, current: currentStep === 0 }">
               <div class="step-circle">1</div>
-              <span class="step-text">{{ $t('workflow.steps.content') }}</span>
+              <span class="step-text">章节内容</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
             <div class="step-item" :class="{ active: currentStep >= 1, current: currentStep === 1 }">
               <div class="step-circle">2</div>
-              <span class="step-text">{{ $t('workflow.steps.generateImages') }}</span>
+              <span class="step-text">生成图片</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
             <div class="step-item" :class="{ active: currentStep >= 2, current: currentStep === 2 }">
               <div class="step-circle">3</div>
-              <span class="step-text">{{ $t('workflow.steps.splitStoryboard') }}</span>
+              <span class="step-text">拆分分镜</span>
             </div>
           </div>
         </template>
         <template #right>
-          <el-button :icon="Setting" @click="showModelConfigDialog" :title="$t('workflow.modelConfig')">
+          <el-button :icon="Setting" @click="showModelConfigDialog" title="图文配置">
             图文配置
           </el-button>
         </template>
@@ -42,7 +42,7 @@
           <el-input
             v-model="scriptContent"
             type="textarea"
-:placeholder="$t('workflow.scriptPlaceholder')"
+            :placeholder="'请输入章节内容...'"
             class="script-textarea script-textarea-fullscreen"
           />
 
@@ -54,7 +54,7 @@
               :disabled="!scriptContent.trim() || generatingScript"
             >
               <el-icon><Check /></el-icon>
-              <span>{{ $t('workflow.saveChapter') }}</span>
+              <span>保存章节</span>
             </el-button>
           </div>
         </div>
@@ -62,8 +62,8 @@
         <!-- 已保存时显示内容 -->
         <div v-if="hasScript" class="overview-section">
           <div class="episode-info">
-            <h3>{{ $t('workflow.chapterContent', { number: episodeNumber }) }}</h3>
-            <el-tag type="success" size="large">{{ $t('workflow.saved') }}</el-tag>
+            <h3>章节内容 {{ episodeNumber }}</h3>
+            <el-tag type="success" size="large">已保存</el-tag>
           </div>
           <div class="overview-content">
             <el-input 
@@ -86,16 +86,16 @@
             >
               <template #title>
                 <div style="display: flex; align-items: center; gap: 16px;">
-                  <span>✅ {{ $t('workflow.extractedData') }}</span>
-                  <el-tag v-if="hasCharacters" type="success">{{ $t('workflow.characters') }}: {{ charactersCount }}</el-tag>
-                  <el-tag v-if="currentEpisode?.scenes" type="success">{{ $t('workflow.scenes') }}: {{ currentEpisode.scenes.length }}</el-tag>
+                  <span>✅ 已提取数据</span>
+                  <el-tag v-if="hasCharacters" type="success">角色: {{ charactersCount }}</el-tag>
+                  <el-tag v-if="currentEpisode?.scenes" type="success">场景: {{ currentEpisode.scenes.length }}</el-tag>
                 </div>
               </template>
             </el-alert>
             
             <!-- 角色列表 -->
             <div v-if="hasCharacters" style="margin-bottom: 16px;">
-              <h4 class="extracted-title">{{ $t('workflow.extractedCharacters') }}：</h4>
+              <h4 class="extracted-title">提取的角色：</h4>
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 <el-tag 
                   v-for="char in currentEpisode?.characters" 
@@ -109,7 +109,7 @@
             
             <!-- 场景列表 -->
             <div v-if="currentEpisode?.scenes && currentEpisode.scenes.length > 0">
-              <h4 class="extracted-title">{{ $t('workflow.extractedScenes') }}：</h4>
+              <h4 class="extracted-title">提取的场景：</h4>
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 <el-tag 
                   v-for="scene in currentEpisode.scenes" 
@@ -133,7 +133,7 @@
               :disabled="!hasScript"
             >
               <el-icon><MagicStick /></el-icon>
-              {{ hasExtractedData ? $t('workflow.reExtract') : $t('workflow.extractCharactersAndScenes') }}
+              {{ hasExtractedData ? '重新提取角色和场景' : '提取角色和场景' }}
             </el-button>
             <el-button 
               type="success"
@@ -141,15 +141,13 @@
               @click="nextStep"
               :disabled="!hasExtractedData"
             >
-              {{ $t('workflow.nextStepGenerateImages') }}
+              下一步：生成图片
               <el-icon><ArrowRight /></el-icon>
             </el-button>
             <div v-if="!hasExtractedData" style="margin-top: 8px;">
               <el-alert type="warning" :closable="false" style="display: inline-block;">
                 <template #title>
-                  <span style="font-size: 12px;">
-                    {{ $t('workflow.extractWarning') }}
-                  </span>
+                  <span style="font-size: 12px;">请先点击“提取角色和场景”按钮，完成提取后才能生成图片</span>
                 </template>
               </el-alert>
             </div>
@@ -167,14 +165,14 @@
             <div class="section-title">
               <h3>
                 <el-icon><User /></el-icon>
-                {{ $t('workflow.characterImages') }}
+                角色图片
               </h3>
               <el-alert 
                 type="info"
                 :closable="false"
                 style="margin: 0;"
               >
-                {{ $t('workflow.characterCount', { count: charactersCount }) }}
+                角色数量: {{ charactersCount }}
               </el-alert>
             </div>
             <div class="section-actions">
@@ -183,7 +181,7 @@
                 @change="toggleSelectAllCharacters"
                 style="margin-right: 12px;"
               >
-                {{ $t('workflow.selectAll') }}
+                全选
               </el-checkbox>
               <el-button 
                 type="primary"
@@ -192,7 +190,7 @@
                 :disabled="selectedCharacterIds.length === 0"
                 size="default"
               >
-                {{ $t('workflow.batchGenerate') }} ({{ selectedCharacterIds.length }})
+                批量生成 ({{ selectedCharacterIds.length }})
               </el-button>
             </div>
           </div>
@@ -216,7 +214,7 @@
                     :icon="Delete"
                     circle
                     @click="deleteCharacter(char.id)"
-:title="$t('workflow.deleteCharacter')"
+                    title="删除角色"
                   />
                 </div>
                 
@@ -226,17 +224,17 @@
                   </div>
                   <div v-else-if="char.image_generation_status === 'pending' || char.image_generation_status === 'processing' || generatingCharacterImages[char.id]" class="char-placeholder generating">
                     <el-icon :size="64" class="rotating"><Loading /></el-icon>
-                    <span>{{ $t('common.generating') }}</span>
-                    <el-tag type="warning" size="small" style="margin-top: 8px;">{{ char.image_generation_status === 'pending' ? $t('common.queuing') : $t('common.processing') }}</el-tag>
+                    <span>生成中</span>
+                    <el-tag type="warning" size="small" style="margin-top: 8px;">{{ char.image_generation_status === 'pending' ? '排队中' : '处理中' }}</el-tag>
                   </div>
                   <div v-else-if="char.image_generation_status === 'failed'" class="char-placeholder failed">
                     <el-icon :size="64"><WarningFilled /></el-icon>
-                    <span>{{ $t('common.generateFailed') }}</span>
-                    <el-tag type="danger" size="small" style="margin-top: 8px;">{{ $t('common.clickToRegenerate') }}</el-tag>
+                    <span>生成失败</span>
+                    <el-tag type="danger" size="small" style="margin-top: 8px;">点击重新生成</el-tag>
                   </div>
                   <div v-else class="char-placeholder">
                     <el-icon :size="64"><User /></el-icon>
-                    <span>{{ $t('common.notGenerated') }}</span>
+                    <span>未生成</span>
                   </div>
                 </div>
 
@@ -1187,13 +1185,14 @@ const editCurrentEpisodeScript = () => {
   scriptContent.value = currentEpisode.value?.script_content || ''
 }
 
+// 处理提取角色和场景
 const handleExtractCharactersAndBackgrounds = async () => {
   // 如果已经提取过，显示确认对话框
   if (hasExtractedData.value) {
     try {
       await ElMessageBox.confirm(
-        $t('workflow.reExtractConfirmMessage'),
-        $t('workflow.reExtractConfirmTitle'),
+        '重新提取将覆盖已提取的角色和场景（包括已生成的图片），确定继续吗？',
+        '重新提取角色和场景',
         {
           confirmButtonText: $t('common.confirm'),
           cancelButtonText: $t('common.cancel'),
