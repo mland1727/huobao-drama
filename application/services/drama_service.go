@@ -8,19 +8,22 @@ import (
 	"time"
 
 	"github.com/drama-generator/backend/domain/models"
+	"github.com/drama-generator/backend/pkg/config"
 	"github.com/drama-generator/backend/pkg/logger"
 	"gorm.io/gorm"
 )
 
 type DramaService struct {
-	db  *gorm.DB
-	log *logger.Logger
+	db      *gorm.DB
+	log     *logger.Logger
+	baseURL string
 }
 
-func NewDramaService(db *gorm.DB, log *logger.Logger) *DramaService {
+func NewDramaService(db *gorm.DB, cfg *config.Config, log *logger.Logger) *DramaService {
 	return &DramaService{
-		db:  db,
-		log: log,
+		db:      db,
+		log:     log,
+		baseURL: cfg.Storage.BaseURL,
 	}
 }
 
@@ -28,6 +31,7 @@ type CreateDramaRequest struct {
 	Title       string `json:"title" binding:"required,min=1,max=100"`
 	Description string `json:"description"`
 	Genre       string `json:"genre"`
+	Style       string `json:"style"`
 	Tags        string `json:"tags"`
 }
 
@@ -35,6 +39,7 @@ type UpdateDramaRequest struct {
 	Title       string `json:"title" binding:"omitempty,min=1,max=100"`
 	Description string `json:"description"`
 	Genre       string `json:"genre"`
+	Style       string `json:"style"`
 	Tags        string `json:"tags"`
 	Status      string `json:"status" binding:"omitempty,oneof=draft planning production completed archived"`
 }
@@ -51,6 +56,7 @@ func (s *DramaService) CreateDrama(req *CreateDramaRequest) (*models.Drama, erro
 	drama := &models.Drama{
 		Title:  req.Title,
 		Status: "draft",
+		Style:  "ghibli", // 默认风格
 	}
 
 	if req.Description != "" {
@@ -58,6 +64,9 @@ func (s *DramaService) CreateDrama(req *CreateDramaRequest) (*models.Drama, erro
 	}
 	if req.Genre != "" {
 		drama.Genre = &req.Genre
+	}
+	if req.Style != "" {
+		drama.Style = req.Style
 	}
 
 	if err := s.db.Create(drama).Error; err != nil {
@@ -109,6 +118,7 @@ func (s *DramaService) GetDrama(dramaID string) (*models.Drama, error) {
 		// 查询角色的图片生成状态
 		for j := range drama.Episodes[i].Characters {
 			var imageGen models.ImageGeneration
+			// 查询进行中或失败的任务状态
 			err := s.db.Where("character_id = ? AND (status = ? OR status = ?)",
 				drama.Episodes[i].Characters[j].ID, "pending", "processing").
 				Order("created_at DESC").
@@ -141,6 +151,7 @@ func (s *DramaService) GetDrama(dramaID string) (*models.Drama, error) {
 		// 查询场景的图片生成状态
 		for j := range drama.Episodes[i].Scenes {
 			var imageGen models.ImageGeneration
+			// 查询进行中或失败的任务状态
 			err := s.db.Where("scene_id = ? AND (status = ? OR status = ?)",
 				drama.Episodes[i].Scenes[j].ID, "pending", "processing").
 				Order("created_at DESC").
@@ -185,6 +196,9 @@ func (s *DramaService) GetDrama(dramaID string) (*models.Drama, error) {
 	for _, scene := range sceneMap {
 		drama.Scenes = append(drama.Scenes, *scene)
 	}
+
+	// 为所有场景的 local_path 添加 base_url 前缀
+	// s.addBaseURLToScenes(&drama)
 
 	return &drama, nil
 }
@@ -261,6 +275,9 @@ func (s *DramaService) UpdateDrama(dramaID string, req *UpdateDramaRequest) (*mo
 	}
 	if req.Genre != "" {
 		updates["genre"] = req.Genre
+	}
+	if req.Style != "" {
+		updates["style"] = req.Style
 	}
 	if req.Tags != "" {
 		updates["tags"] = req.Tags
@@ -651,4 +668,25 @@ func (s *DramaService) SaveProgress(dramaID string, req *SaveProgressRequest) er
 
 	s.log.Infow("Progress saved", "drama_id", dramaID, "step", req.CurrentStep)
 	return nil
+}
+
+// addBaseURLToScenes 为剧本中所有场景的 local_path 添加 base_url 前缀
+func (s *DramaService) addBaseURLToScenes(drama *models.Drama) {
+	// 处理 drama.Scenes
+	for i := range drama.Scenes {
+		if drama.Scenes[i].LocalPath != nil && *drama.Scenes[i].LocalPath != "" {
+			fullPath := fmt.Sprintf("%s/%s", s.baseURL, *drama.Scenes[i].LocalPath)
+			drama.Scenes[i].LocalPath = &fullPath
+		}
+	}
+
+	// 处理 drama.Episodes[].Scenes
+	for i := range drama.Episodes {
+		for j := range drama.Episodes[i].Scenes {
+			if drama.Episodes[i].Scenes[j].LocalPath != nil && *drama.Episodes[i].Scenes[j].LocalPath != "" {
+				fullPath := fmt.Sprintf("%s/%s", s.baseURL, *drama.Episodes[i].Scenes[j].LocalPath)
+				drama.Episodes[i].Scenes[j].LocalPath = &fullPath
+			}
+		}
+	}
 }

@@ -4,14 +4,16 @@
     <div class="editor-toolbar">
       <div class="toolbar-left">
         <el-button-group>
-          <el-button :icon="VideoPlay" @click="playTimeline" :disabled="timelineClips.length === 0">{{ $t('common.play') }}</el-button>
+          <el-button :icon="VideoPlay" @click="playTimeline" :disabled="timelineClips.length === 0">{{
+            $t('common.play')
+          }}</el-button>
           <el-button :icon="VideoPause" @click="pauseTimeline">{{ $t('common.pause') }}</el-button>
         </el-button-group>
         <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(totalDuration) }}</span>
       </div>
       <div class="toolbar-right">
-        <el-button 
-          type="primary" 
+        <el-button
+          type="primary"
           :icon="VideoCamera"
           @click="submitTimelineForMerge"
           :disabled="timelineClips.length === 0"
@@ -27,7 +29,7 @@
       <!-- 预览区域 -->
       <div class="preview-panel">
         <div class="video-preview" @click="togglePlay">
-          <video 
+          <video
             ref="previewPlayer"
             :src="currentPreviewUrl"
             @loadedmetadata="handlePreviewLoaded"
@@ -35,18 +37,24 @@
             @ended="handlePreviewEnded"
           />
           <!-- 音频播放器（隐藏） -->
-          <audio 
+          <audio
             ref="audioPlayer"
             :src="currentAudioUrl"
             @loadedmetadata="handleAudioLoaded"
             @ended="handleAudioEnded"
-            style="display: none;"
+            style="display: none"
           />
           <!-- 转场效果层 -->
-          <div 
+          <div
             v-if="transitionState.active"
             class="transition-overlay"
-            :class="[`transition-${transitionState.type}`, { 'transition-in': transitionState.phase === 'in', 'transition-out': transitionState.phase === 'out' }]"
+            :class="[
+              `transition-${transitionState.type}`,
+              {
+                'transition-in': transitionState.phase === 'in',
+                'transition-out': transitionState.phase === 'out',
+              },
+            ]"
             :style="{ animationDuration: transitionState.duration + 's' }"
           ></div>
           <!-- 播放/暂停图标覆盖层 -->
@@ -58,12 +66,7 @@
           </div>
         </div>
         <div class="preview-controls">
-          <el-slider 
-            v-model="currentTime" 
-            :max="totalDuration"
-            :step="0.1"
-            @change="seekToTime"
-          />
+          <el-slider v-model="currentTime" :max="totalDuration" :step="0.1" @change="seekToTime" />
         </div>
       </div>
 
@@ -74,8 +77,8 @@
             <h4>{{ $t('video.mediaLibrary') }}</h4>
             <span>{{ $t('video.videoCount', { count: availableStoryboards.length }) }}</span>
           </div>
-          <el-button 
-            type="primary" 
+          <el-button
+            type="primary"
             size="small"
             :icon="FolderAdd"
             @click="addAllScenesInOrder"
@@ -95,27 +98,22 @@
             <div class="media-thumbnail" @click="previewScene(scene)">
               <video :src="scene.video_url" />
               <div class="media-duration">{{ scene.duration > 0 ? scene.duration.toFixed(1) : '?' }}s</div>
-              <el-button 
+              <el-button
                 class="delete-btn"
-                type="danger" 
-                size="small" 
+                type="danger"
+                size="small"
                 :icon="Delete"
                 circle
                 @click.stop="deleteAsset(scene)"
               />
               <div class="media-overlay">
-                <el-button 
-                  type="primary" 
-                  size="small" 
-                  :icon="Plus"
-                  @click.stop="addClipToTimeline(scene)"
-                >
+                <el-button type="primary" size="small" :icon="Plus" @click.stop="addClipToTimeline(scene)">
                   {{ $t('common.addToTimeline') }}
                 </el-button>
               </div>
             </div>
             <div class="media-info">
-              <div class="media-title">{{ $t('storyboard.shot') }} #{{ scene.storyboard_num || scene.assetId }}</div>
+              <div class="media-title">{{ $t('storyboard.shot') }} #{{ scene.storyboard_num || scene.asset_id }}</div>
             </div>
           </div>
         </div>
@@ -138,28 +136,27 @@
       <div class="timeline-container" ref="timelineContainer">
         <!-- 时间标尺 -->
         <div class="timeline-ruler" :style="{ width: timelineWidth + 'px' }">
-          <div 
-            v-for="tick in timeRulerTicks" 
+          <div
+            v-for="tick in timeRulerTicks"
             :key="tick.time"
             class="ruler-tick"
             :style="{ left: tick.position + 'px' }"
           >
             <div class="tick-mark" :class="tick.type"></div>
-            <div class="tick-label" v-if="tick.type === 'major'">{{ formatTime(tick.time) }}</div>
+            <div class="tick-label" v-if="tick.type === 'major'">
+              {{ formatTime(tick.time) }}
+            </div>
           </div>
         </div>
 
         <!-- 播放头 -->
-        <div 
-          class="playhead"
-          :style="{ left: playheadPosition + 'px' }"
-        >
-          <div class="playhead-line"></div>
-          <div class="playhead-handle"></div>
+        <div class="playhead" :style="{ left: playheadPosition + 'px' }">
+          <div class="playhead-line" @mousedown="startDragPlayhead"></div>
+          <div class="playhead-handle" @mousedown="startDragPlayhead"></div>
         </div>
 
         <!-- 视频轨道 -->
-        <div 
+        <div
           class="timeline-track"
           :style="{ width: timelineWidth + 'px' }"
           @drop="handleTrackDrop($event)"
@@ -168,9 +165,9 @@
         >
           <div class="track-label">
             <span>{{ $t('video.videoTrack') }}</span>
-            <el-button 
-              type="text" 
-              size="small" 
+            <el-button
+              type="text"
+              size="small"
               @click.stop="clearAllClips"
               :disabled="timelineClips.length === 0"
               :title="$t('video.clearTrack')"
@@ -204,7 +201,7 @@
                 <el-icon><Close /></el-icon>
               </div>
             </div>
-            
+
             <!-- 转场指示器 -->
             <div
               v-for="(clip, index) in timelineClips.slice(1)"
@@ -220,7 +217,7 @@
         </div>
 
         <!-- 音频轨道 -->
-        <div 
+        <div
           v-if="showAudioTrack"
           class="timeline-track audio-track"
           :style="{ width: timelineWidth + 'px' }"
@@ -228,12 +225,12 @@
         >
           <div class="track-label">
             <span>{{ $t('video.audioTrack') }}</span>
-            <el-button 
-              type="text" 
-              size="small" 
+            <el-button
+              type="text"
+              size="small"
               @click.stop="extractAllAudio"
               :disabled="timelineClips.length === 0"
-:title="$t('video.extractAudio')"
+              :title="$t('video.extractAudio')"
             >
               <el-icon><Headset /></el-icon>
             </el-button>
@@ -270,11 +267,7 @@
     </div>
 
     <!-- 转场设置对话框 -->
-    <el-dialog
-      v-model="transitionDialogVisible"
-      title="设置转场效果"
-      width="500px"
-    >
+    <el-dialog v-model="transitionDialogVisible" title="设置转场效果" width="500px">
       <el-form label-width="100px">
         <el-form-item :label="$t('video.transitionType')">
           <el-select v-model="editingTransition.type" :placeholder="$t('video.selectTransition')">
@@ -331,9 +324,9 @@
     </el-dialog>
 
     <!-- 合并进度对话框 -->
-    <el-dialog 
-      v-model="mergeDialogVisible" 
-      title="视频合并中" 
+    <el-dialog
+      v-model="mergeDialogVisible"
+      title="视频合并中"
       width="500px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
@@ -348,13 +341,13 @@
           </div>
           <div class="progress-message">{{ mergeProgressDetail.message }}</div>
         </div>
-        
-        <el-progress 
-          :percentage="mergeProgressDetail.progress" 
+
+        <el-progress
+          :percentage="mergeProgressDetail.progress"
           :status="mergeProgressDetail.phase === 'completed' ? 'success' : undefined"
           :stroke-width="20"
         />
-        
+
         <div class="progress-tips">
           <p v-if="mergeProgressDetail.phase === 'loading'">
             <el-icon><Loading /></el-icon>
@@ -374,7 +367,7 @@
           </p>
         </div>
       </div>
-      
+
       <template #footer v-if="!merging">
         <el-button @click="mergeDialogVisible = false">关闭</el-button>
       </template>
@@ -385,22 +378,42 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  VideoPlay, VideoPause, Plus, FolderAdd, ArrowLeft, ArrowRight,
-  Scissor, Connection, Setting, ZoomIn, ZoomOut, Refresh, Download, Delete,
-  Close, VideoCamera, Check, Loading, Headset, Microphone
+import {
+  VideoPlay,
+  VideoPause,
+  Plus,
+  FolderAdd,
+  ArrowLeft,
+  ArrowRight,
+  Scissor,
+  Connection,
+  Setting,
+  ZoomIn,
+  ZoomOut,
+  Refresh,
+  Download,
+  Delete,
+  Close,
+  VideoCamera,
+  Check,
+  Loading,
+  Headset,
+  Microphone,
 } from '@element-plus/icons-vue'
 import { videoMerger, type MergeProgress } from '@/utils/videoMerger'
 import { trimAndMergeVideos } from '@/utils/ffmpeg'
+import { getVideoUrl } from '@/utils/image'
 
 interface Scene {
   id: string
+  storyboard_id: string
   storyboard_number: number
   title?: string
   description?: string
   location?: string
   time?: string
   video_url: string
+  asset_id?: string
   duration?: number
 }
 
@@ -409,29 +422,51 @@ interface TimelineClip {
   storyboard_id: string
   storyboard_number: number
   video_url: string
+  asset_id?: string // 素材库中的资源ID
   start_time: number
   end_time: number
   duration: number
-  position: number  // 在时间线上的位置（秒）
+  position: number // 在时间线上的位置（秒）
   order: number
   transition?: {
-    type: 'fade' | 'fadeblack' | 'fadewhite' | 'fadegrays' | 'slideleft' | 'slideright' | 'slideup' | 'slidedown' | 'wipeleft' | 'wiperight' | 'wipeup' | 'wipedown' | 'circleopen' | 'circleclose' | 'dissolve' | 'distance' | 'horzopen' | 'horzclose' | 'vertopen' | 'vertclose' | 'none'
+    type:
+      | 'fade'
+      | 'fadeblack'
+      | 'fadewhite'
+      | 'fadegrays'
+      | 'slideleft'
+      | 'slideright'
+      | 'slideup'
+      | 'slidedown'
+      | 'wipeleft'
+      | 'wiperight'
+      | 'wipeup'
+      | 'wipedown'
+      | 'circleopen'
+      | 'circleclose'
+      | 'dissolve'
+      | 'distance'
+      | 'horzopen'
+      | 'horzclose'
+      | 'vertopen'
+      | 'vertclose'
+      | 'none'
     duration: number
   }
-  audio_url?: string  // 提取的音频URL
-  muted?: boolean     // 是否静音
+  audio_url?: string // 提取的音频URL
+  muted?: boolean // 是否静音
 }
 
 interface AudioClip {
   id: string
-  source_clip_id: string  // 关联的视频片段ID
+  source_clip_id: string // 关联的视频片段ID
   audio_url: string
   start_time: number
   end_time: number
   duration: number
   position: number
   order: number
-  volume: number  // 音量 0-1
+  volume: number // 音量 0-1
 }
 
 const props = defineProps<{
@@ -449,25 +484,25 @@ const emit = defineEmits<{
 // 基础状态
 const availableStoryboards = computed(() => {
   const assets = (props.assets || [])
-    .filter(a => {
+    .filter((a) => {
       const isValid = a.type === 'video' && a.url
       return isValid
     })
-    .map(a => ({
+    .map((a) => ({
       id: `asset_${a.id}`,
       storyboard_number: a.storyboard_num || a.id,
       storyboard_num: a.storyboard_num,
       storyboard_id: a.storyboard_id,
-      video_url: a.url,
+      video_url: getVideoUrl(a), // 优先使用 local_path
       duration: a.duration || 0,
       name: a.name,
       isAsset: true,
-      assetId: a.id
+      asset_id: a.id, // 使用 asset_id 字段名
     }))
     .sort((a, b) => {
       // 优先按storyboard_num排序，如果没有则按storyboard_id排序，最后按asset id排序
-      const aNum = a.storyboard_num || a.storyboard_id || a.assetId
-      const bNum = b.storyboard_num || b.storyboard_id || b.assetId
+      const aNum = a.storyboard_num || a.storyboard_id || a.asset_id
+      const bNum = b.storyboard_num || b.storyboard_id || b.asset_id
       return aNum - bNum
     })
   return assets
@@ -479,7 +514,7 @@ const selectedAudioClipId = ref<string | null>(null)
 const previewPlayer = ref<HTMLVideoElement | null>(null)
 const audioPlayer = ref<HTMLAudioElement | null>(null)
 const timelineContainer = ref<HTMLElement | null>(null)
-const showAudioTrack = ref(true)  // 是否显示音频轨道
+const showAudioTrack = ref(true) // 是否显示音频轨道
 
 // 时间线状态
 const currentTime = ref(0)
@@ -493,7 +528,7 @@ const transitionState = ref({
   active: false,
   type: 'fade',
   phase: 'in' as 'in' | 'out',
-  duration: 1.0
+  duration: 1.0,
 })
 
 // 导出状态
@@ -504,15 +539,36 @@ const mergeDialogVisible = ref(false)
 const mergeProgressDetail = ref<MergeProgress>({
   phase: 'loading',
   progress: 0,
-  message: ''
+  message: '',
 })
 
 // 转场设置状态
 const transitionDialogVisible = ref(false)
 const editingTransitionClipId = ref<string | null>(null)
 const editingTransition = ref({
-  type: 'fade' as 'fade' | 'fadeblack' | 'fadewhite' | 'fadegrays' | 'slideleft' | 'slideright' | 'slideup' | 'slidedown' | 'wipeleft' | 'wiperight' | 'wipeup' | 'wipedown' | 'circleopen' | 'circleclose' | 'dissolve' | 'distance' | 'horzopen' | 'horzclose' | 'vertopen' | 'vertclose' | 'none',
-  duration: 1.0
+  type: 'fade' as
+    | 'fade'
+    | 'fadeblack'
+    | 'fadewhite'
+    | 'fadegrays'
+    | 'slideleft'
+    | 'slideright'
+    | 'slideup'
+    | 'slidedown'
+    | 'wipeleft'
+    | 'wiperight'
+    | 'wipeup'
+    | 'wipedown'
+    | 'circleopen'
+    | 'circleclose'
+    | 'dissolve'
+    | 'distance'
+    | 'horzopen'
+    | 'horzclose'
+    | 'vertopen'
+    | 'vertclose'
+    | 'none',
+  duration: 1.0,
 })
 
 // 计算总时长
@@ -534,15 +590,15 @@ const getSceneDesc = (scene: Scene) => {
   const parts = []
   if (scene.location) parts.push(scene.location)
   if (scene.time) parts.push(scene.time)
-  return parts.join(' · ') || (scene.description?.slice(0, 15) + '...' || '无描述')
+  return parts.join(' · ') || scene.description?.slice(0, 15) + '...' || '无描述'
 }
 
 // 预览相关
 const currentPreviewUrl = computed(() => {
   if (timelineClips.value.length === 0) return ''
   // 根据当前时间找到应该播放的片段
-  const clip = timelineClips.value.find(c => 
-    currentTime.value >= c.position && currentTime.value < c.position + c.duration
+  const clip = timelineClips.value.find(
+    (c) => currentTime.value >= c.position && currentTime.value < c.position + c.duration,
   )
   return clip?.video_url || timelineClips.value[0]?.video_url || ''
 })
@@ -551,8 +607,8 @@ const currentPreviewUrl = computed(() => {
 const currentAudioUrl = computed(() => {
   if (audioClips.value.length === 0) return ''
   // 根据当前时间找到应该播放的音频片段
-  const audioClip = audioClips.value.find(a => 
-    currentTime.value >= a.position && currentTime.value < a.position + a.duration
+  const audioClip = audioClips.value.find(
+    (a) => currentTime.value >= a.position && currentTime.value < a.position + a.duration,
   )
   return audioClip?.audio_url || ''
 })
@@ -567,8 +623,8 @@ const previewScene = (scene: Scene) => {
 const handlePreviewLoaded = () => {
   // 视频加载完成后跳转到正确的时间点
   if (previewPlayer.value) {
-    const clip = timelineClips.value.find(c => 
-      currentTime.value >= c.position && currentTime.value < c.position + c.duration
+    const clip = timelineClips.value.find(
+      (c) => currentTime.value >= c.position && currentTime.value < c.position + c.duration,
     )
     if (clip) {
       const offsetInClip = currentTime.value - clip.position
@@ -580,8 +636,8 @@ const handlePreviewLoaded = () => {
 const handleAudioLoaded = () => {
   // 音频加载完成后跳转到正确的时间点
   if (audioPlayer.value && audioClips.value.length > 0) {
-    const audioClip = audioClips.value.find(a => 
-      currentTime.value >= a.position && currentTime.value < a.position + a.duration
+    const audioClip = audioClips.value.find(
+      (a) => currentTime.value >= a.position && currentTime.value < a.position + a.duration,
     )
     if (audioClip) {
       const offsetInClip = currentTime.value - audioClip.position
@@ -592,14 +648,14 @@ const handleAudioLoaded = () => {
 
 const handleAudioEnded = () => {
   // 音频自然结束，尝试播放下一个音频片段
-  const currentAudio = audioClips.value.find(a => 
-    currentTime.value >= a.position && currentTime.value < a.position + a.duration
+  const currentAudio = audioClips.value.find(
+    (a) => currentTime.value >= a.position && currentTime.value < a.position + a.duration,
   )
-  
+
   if (currentAudio) {
-    const currentIndex = audioClips.value.findIndex(a => a.id === currentAudio.id)
+    const currentIndex = audioClips.value.findIndex((a) => a.id === currentAudio.id)
     const nextAudio = audioClips.value[currentIndex + 1]
-    
+
     if (nextAudio && isPlaying.value) {
       // 有下一个音频片段且正在播放，继续
       // 时间线会自动更新到下一个片段
@@ -609,28 +665,28 @@ const handleAudioEnded = () => {
 
 const handlePreviewTimeUpdate = () => {
   if (!isPlaying.value || !previewPlayer.value) return
-  
+
   // 找到当前播放的片段
-  const currentClip = timelineClips.value.find(c => 
-    currentTime.value >= c.position && currentTime.value < c.position + c.duration
+  const currentClip = timelineClips.value.find(
+    (c) => currentTime.value >= c.position && currentTime.value < c.position + c.duration,
   )
-  
+
   if (!currentClip) {
     pauseTimeline()
     return
   }
-  
+
   // 计算时间线上的当前位置
   const videoTime = previewPlayer.value.currentTime
   const clipOffset = videoTime - currentClip.start_time
   currentTime.value = currentClip.position + clipOffset
-  
+
   // 检查是否播放到片段结尾（提前0.1秒检测，避免播放完才切换）
   if (videoTime >= currentClip.end_time - 0.1) {
     // 查找下一个片段
-    const currentIndex = timelineClips.value.findIndex(c => c.id === currentClip.id)
+    const currentIndex = timelineClips.value.findIndex((c) => c.id === currentClip.id)
     const nextClip = timelineClips.value[currentIndex + 1]
-    
+
     if (nextClip) {
       // 切换到下一个片段
       switchToClip(nextClip)
@@ -644,90 +700,90 @@ const handlePreviewTimeUpdate = () => {
 
 const switchToClip = async (clip: TimelineClip) => {
   if (!previewPlayer.value) return
-  
+
   // 获取转场配置
   const transition = clip.transition
   const hasTransition = transition && transition.type !== 'none'
-  const transitionDuration = hasTransition ? (transition.duration * 1000) : 0
-  
+  const transitionDuration = hasTransition ? transition.duration * 1000 : 0
+
   if (hasTransition) {
     // 触发转场效果
     transitionState.value = {
       active: true,
       type: transition.type,
       phase: 'out',
-      duration: transition.duration
+      duration: transition.duration,
     }
-    
+
     // 等待转场动画完成一半
-    await new Promise(resolve => setTimeout(resolve, transitionDuration / 2))
+    await new Promise((resolve) => setTimeout(resolve, transitionDuration / 2))
   }
-  
+
   // 暂停当前播放，避免冲突
   previewPlayer.value.pause()
   if (audioPlayer.value) {
     audioPlayer.value.pause()
   }
-  
+
   // 切换视频源
   currentTime.value = clip.position
   previewPlayer.value.src = clip.video_url
-  
+
   // 同步切换音频源
   if (audioClips.value.length > 0 && audioPlayer.value) {
-    const audioClip = audioClips.value.find(a => 
-      clip.position >= a.position && clip.position < a.position + a.duration
+    const audioClip = audioClips.value.find(
+      (a) => clip.position >= a.position && clip.position < a.position + a.duration,
     )
     if (audioClip) {
       audioPlayer.value.src = audioClip.audio_url
     }
   }
-  
+
   // 等待视频加载
   try {
     await new Promise((resolve, reject) => {
       if (!previewPlayer.value) return reject()
-      
+
       const onCanPlay = () => {
         previewPlayer.value?.removeEventListener('canplay', onCanPlay)
         previewPlayer.value?.removeEventListener('error', onError)
         resolve(undefined)
       }
-      
+
       const onError = () => {
         previewPlayer.value?.removeEventListener('canplay', onCanPlay)
         previewPlayer.value?.removeEventListener('error', onError)
         reject()
       }
-      
+
       previewPlayer.value.addEventListener('canplay', onCanPlay)
       previewPlayer.value.addEventListener('error', onError)
     })
-    
+
     // 设置起始时间并播放
     previewPlayer.value.currentTime = clip.start_time
-    
+
     if (hasTransition) {
       // 切换到转场入场阶段
       transitionState.value.phase = 'in'
-      
+
       // 等待转场剩余时间
       setTimeout(() => {
         transitionState.value.active = false
       }, transitionDuration / 2)
     }
-    
+
     if (isPlaying.value) {
       await previewPlayer.value.play()
-      
+
       // 同步播放音频
       if (audioClips.value.length > 0 && audioPlayer.value) {
-        const audioClip = audioClips.value.find(a => 
-          clip.position >= a.position && clip.position < a.position + a.duration
+        const audioClip = audioClips.value.find(
+          (a) => clip.position >= a.position && clip.position < a.position + a.duration,
         )
         if (audioClip && audioPlayer.value.src) {
           audioPlayer.value.currentTime = audioClip.start_time
-          audioPlayer.value.play().catch(err => {
+          audioPlayer.value.play().catch((err) => {
             console.warn('音频播放失败:', err)
           })
         }
@@ -742,14 +798,14 @@ const switchToClip = async (clip: TimelineClip) => {
 
 const handlePreviewEnded = () => {
   // 视频自然结束，尝试播放下一个片段
-  const currentClip = timelineClips.value.find(c => 
-    currentTime.value >= c.position && currentTime.value < c.position + c.duration
+  const currentClip = timelineClips.value.find(
+    (c) => currentTime.value >= c.position && currentTime.value < c.position + c.duration,
   )
-  
+
   if (currentClip) {
-    const currentIndex = timelineClips.value.findIndex(c => c.id === currentClip.id)
+    const currentIndex = timelineClips.value.findIndex((c) => c.id === currentClip.id)
     const nextClip = timelineClips.value[currentIndex + 1]
-    
+
     if (nextClip) {
       currentTime.value = nextClip.position
       seekToTime(nextClip.position)
@@ -775,12 +831,12 @@ const timeRulerTicks = computed(() => {
   const ticks = []
   const duration = Math.max(totalDuration.value, 30)
   const interval = zoom.value >= 1.5 ? 1 : zoom.value >= 0.5 ? 5 : 10
-  
+
   for (let i = 0; i <= duration; i += interval) {
     ticks.push({
       time: i,
       position: 100 + i * pixelsPerSecond.value,
-      type: i % (interval * 2) === 0 ? 'major' : 'minor'
+      type: i % (interval * 2) === 0 ? 'major' : 'minor',
     })
   }
   return ticks
@@ -790,7 +846,7 @@ const timeRulerTicks = computed(() => {
 const getClipStyle = (clip: TimelineClip) => {
   return {
     left: 100 + clip.position * pixelsPerSecond.value + 'px',
-    width: clip.duration * pixelsPerSecond.value + 'px'
+    width: clip.duration * pixelsPerSecond.value + 'px',
   }
 }
 
@@ -806,9 +862,9 @@ const handleTrackDrop = (event: DragEvent) => {
   event.preventDefault()
   const sceneData = event.dataTransfer?.getData('scene')
   if (!sceneData) return
-  
+
   const scene = JSON.parse(sceneData) as Scene
-  
+
   // 默认添加到末尾，不使用拖拽位置（避免产生空隙）
   addClipToTimeline(scene)
 }
@@ -818,13 +874,13 @@ const getVideoDuration = (videoUrl: string): Promise<number> => {
     const video = document.createElement('video')
     video.preload = 'metadata'
     video.src = videoUrl
-    
+
     video.onloadedmetadata = () => {
       const duration = video.duration
       video.remove()
       resolve(duration)
     }
-    
+
     video.onerror = () => {
       video.remove()
       reject(new Error('Failed to load video'))
@@ -847,13 +903,13 @@ const addClipToTimeline = async (scene: Scene, insertAtPosition?: number) => {
   // 计算新片段的位置
   let clipPosition: number
   let insertAfterIndex: number | null = null
-  
+
   if (insertAtPosition !== undefined && timelineClips.value.length > 0) {
     // 如果指定了插入位置,找到应该插入的位置
     clipPosition = insertAtPosition
   } else if (selectedClipId.value && timelineClips.value.length > 0) {
     // 如果有选中的片段，插入到选中片段之后
-    const selectedIndex = timelineClips.value.findIndex(c => c.id === selectedClipId.value)
+    const selectedIndex = timelineClips.value.findIndex((c) => c.id === selectedClipId.value)
     if (selectedIndex !== -1) {
       const selectedClip = timelineClips.value[selectedIndex]
       clipPosition = selectedClip.position + selectedClip.duration
@@ -873,12 +929,13 @@ const addClipToTimeline = async (scene: Scene, insertAtPosition?: number) => {
       clipPosition = lastClip.position + lastClip.duration
     }
   }
-  
+
   const newClip: TimelineClip = {
     id: `clip_${Date.now()}_${scene.id}`,
     storyboard_id: scene.storyboard_id,
     storyboard_number: scene.storyboard_number,
     video_url: scene.video_url,
+    asset_id: scene.asset_id, // 保存素材库ID
     start_time: 0,
     end_time: videoDuration,
     duration: videoDuration,
@@ -886,10 +943,10 @@ const addClipToTimeline = async (scene: Scene, insertAtPosition?: number) => {
     order: timelineClips.value.length,
     transition: {
       type: 'fade',
-      duration: 1.0
-    }
+      duration: 1.0,
+    },
   }
-  
+
   // 如果是插入到中间，需要调整后续片段的位置
   if (insertAfterIndex !== null && insertAfterIndex < timelineClips.value.length - 1) {
     const newDuration = newClip.duration
@@ -898,14 +955,14 @@ const addClipToTimeline = async (scene: Scene, insertAtPosition?: number) => {
       timelineClips.value[i].position += newDuration
     }
   }
-  
+
   timelineClips.value.push(newClip)
   timelineClips.value.sort((a, b) => a.position - b.position)
   updateClipOrders()
-  
+
   // 选中新添加的片段
   selectedClipId.value = newClip.id
-  
+
   const insertInfo = insertAfterIndex !== null ? '（已插入到选中片段后）' : ''
   ElMessage.success(`已添加到时间线${insertInfo}`)
 }
@@ -918,9 +975,7 @@ const addAllScenesInOrder = async () => {
   }
 
   // 按场景编号排序
-  const sortedScenes = [...availableStoryboards.value].sort((a, b) => 
-    a.storyboard_number - b.storyboard_number
-  )
+  const sortedScenes = [...availableStoryboards.value].sort((a, b) => a.storyboard_number - b.storyboard_number)
 
   // 清空当前选中，让所有场景都添加到末尾
   selectedClipId.value = null
@@ -943,10 +998,10 @@ const deleteAsset = async (scene: any) => {
   try {
     // 直接调用API删除
     const { assetAPI } = await import('@/api/asset')
-    await assetAPI.deleteAsset(scene.assetId)
-    
+    await assetAPI.deleteAsset(scene.asset_id)
+
     ElMessage.success('删除成功')
-    
+
     // 通知父组件刷新素材列表
     emit('asset-deleted')
   } catch (error: any) {
@@ -959,7 +1014,7 @@ const deleteAsset = async (scene: any) => {
 const getTransitionStyle = (clip: TimelineClip) => {
   // 转场指示器显示在片段开始位置
   return {
-    left: 100 + clip.position * pixelsPerSecond.value - 15 + 'px'
+    left: 100 + clip.position * pixelsPerSecond.value - 15 + 'px',
   }
 }
 
@@ -968,26 +1023,26 @@ const getTransitionLabel = (clip: TimelineClip) => {
     return '无'
   }
   const labels: Record<string, string> = {
-    'fade': '淡入',
-    'fadeblack': '黑场',
-    'fadewhite': '白场',
-    'fadegrays': '灰场',
-    'slideleft': '左滑',
-    'slideright': '右滑',
-    'slideup': '上滑',
-    'slidedown': '下滑',
-    'wipeleft': '左擦',
-    'wiperight': '右擦',
-    'wipeup': '上擦',
-    'wipedown': '下擦',
-    'circleopen': '圆开',
-    'circleclose': '圆关',
-    'dissolve': '溶解',
-    'distance': '距离',
-    'horzopen': '水平开',
-    'horzclose': '水平关',
-    'vertopen': '垂直开',
-    'vertclose': '垂直关'
+    fade: '淡入',
+    fadeblack: '黑场',
+    fadewhite: '白场',
+    fadegrays: '灰场',
+    slideleft: '左滑',
+    slideright: '右滑',
+    slideup: '上滑',
+    slidedown: '下滑',
+    wipeleft: '左擦',
+    wiperight: '右擦',
+    wipeup: '上擦',
+    wipedown: '下擦',
+    circleopen: '圆开',
+    circleclose: '圆关',
+    dissolve: '溶解',
+    distance: '距离',
+    horzopen: '水平开',
+    horzclose: '水平关',
+    vertopen: '垂直开',
+    vertclose: '垂直关',
   }
   return labels[clip.transition.type] || '转场'
 }
@@ -997,28 +1052,28 @@ const openTransitionDialog = (clip: TimelineClip) => {
     clip_id: clip.id,
     storyboard_id: clip.storyboard_id,
     order: clip.order,
-    current_transition: clip.transition
+    current_transition: clip.transition,
   })
   editingTransitionClipId.value = clip.id
   editingTransition.value = {
     type: clip.transition?.type || 'fade',
-    duration: clip.transition?.duration || 1.0
+    duration: clip.transition?.duration || 1.0,
   }
   transitionDialogVisible.value = true
 }
 
 const applyTransition = () => {
-  const clip = timelineClips.value.find(c => c.id === editingTransitionClipId.value)
+  const clip = timelineClips.value.find((c) => c.id === editingTransitionClipId.value)
   if (clip) {
     clip.transition = {
       type: editingTransition.value.type,
-      duration: editingTransition.value.duration
+      duration: editingTransition.value.duration,
     }
     console.log('✅ 转场效果已设置:', {
       clip_id: clip.id,
       storyboard_id: clip.storyboard_id,
       order: clip.order,
-      transition: clip.transition
+      transition: clip.transition,
     })
     ElMessage.success('转场效果已设置')
   } else {
@@ -1033,13 +1088,13 @@ const selectClip = (clip: TimelineClip) => {
 }
 
 const removeClip = (clip: TimelineClip) => {
-  const index = timelineClips.value.findIndex(c => c.id === clip.id)
+  const index = timelineClips.value.findIndex((c) => c.id === clip.id)
   if (index !== -1) {
     timelineClips.value.splice(index, 1)
     updateClipOrders()
-    
+
     // 同时移除关联的音频片段
-    const audioIndex = audioClips.value.findIndex(a => a.source_clip_id === clip.id)
+    const audioIndex = audioClips.value.findIndex((a) => a.source_clip_id === clip.id)
     if (audioIndex !== -1) {
       audioClips.value.splice(audioIndex, 1)
       updateAudioClipOrders()
@@ -1049,7 +1104,7 @@ const removeClip = (clip: TimelineClip) => {
 
 const clearAllClips = () => {
   if (timelineClips.value.length === 0) return
-  
+
   timelineClips.value = []
   audioClips.value = []
   selectedClipId.value = null
@@ -1073,24 +1128,24 @@ const extractAllAudio = async () => {
 
   const loadingMessage = ElMessage.info({
     message: '正在从视频中提取音频轨道，请稍候...',
-    duration: 0
+    duration: 0,
   })
-  
+
   try {
     // 清空现有音频
     audioClips.value = []
-    
+
     // 收集所有视频URL
-    const videoUrls = timelineClips.value.map(clip => clip.video_url)
-    
+    const videoUrls = timelineClips.value.map((clip) => clip.video_url)
+
     // 调用后端API批量提取音频
     const { audioAPI } = await import('@/api/audio')
     const response = await audioAPI.batchExtractAudio(videoUrls)
-    
+
     if (!response.results || response.results.length === 0) {
       throw new Error('音频提取失败，未返回结果')
     }
-    
+
     // 为每个视频片段创建对应的音频片段
     timelineClips.value.forEach((clip, index) => {
       const extractedAudio = response.results[index]
@@ -1098,22 +1153,22 @@ const extractAllAudio = async () => {
         console.warn(`视频片段 ${index} 未能提取音频`)
         return
       }
-      
+
       // 验证音频时长
       const audioDuration = extractedAudio.duration
       if (!audioDuration || audioDuration <= 0) {
         console.error(`音频片段 ${index} 时长无效:`, audioDuration)
         throw new Error(`音频片段 ${index + 1} 时长无效`)
       }
-      
+
       console.log(`音频片段 ${index}:`, {
         video_duration: clip.duration,
         audio_duration: audioDuration,
         video_position: clip.position,
         video_url: clip.video_url,
-        audio_url: extractedAudio.audio_url
+        audio_url: extractedAudio.audio_url,
       })
-      
+
       const audioClip: AudioClip = {
         id: `audio_${Date.now()}_${index}`,
         source_clip_id: clip.id,
@@ -1123,11 +1178,11 @@ const extractAllAudio = async () => {
         duration: audioDuration, // 使用提取的音频时长
         position: clip.position, // 和视频片段在时间轴上相同位置
         order: index,
-        volume: 1.0
+        volume: 1.0,
       }
       audioClips.value.push(audioClip)
     })
-    
+
     updateAudioClipOrders()
     loadingMessage.close()
     ElMessage.success(`已成功提取 ${audioClips.value.length} 个音频片段`)
@@ -1147,7 +1202,7 @@ const selectAudioClip = (audio: AudioClip) => {
 }
 
 const removeAudioClip = (audio: AudioClip) => {
-  const index = audioClips.value.findIndex(a => a.id === audio.id)
+  const index = audioClips.value.findIndex((a) => a.id === audio.id)
   if (index !== -1) {
     audioClips.value.splice(index, 1)
     updateAudioClipOrders()
@@ -1163,7 +1218,7 @@ const updateAudioClipOrders = () => {
 // 拖拽音频片段
 const startDragAudioClip = (event: MouseEvent, audio: AudioClip) => {
   if (dragState.value.isResizing) return
-  
+
   event.stopPropagation()
   dragState.value = {
     isDragging: true,
@@ -1172,9 +1227,9 @@ const startDragAudioClip = (event: MouseEvent, audio: AudioClip) => {
     startX: event.clientX,
     startPosition: audio.position,
     startTime: 0,
-    originalDuration: audio.duration
+    originalDuration: audio.duration,
   }
-  
+
   selectedAudioClipId.value = audio.id
   document.addEventListener('mousemove', handleDragAudioMove)
   document.addEventListener('mouseup', handleDragAudioEnd)
@@ -1182,24 +1237,24 @@ const startDragAudioClip = (event: MouseEvent, audio: AudioClip) => {
 
 const handleDragAudioMove = (event: MouseEvent) => {
   if (!dragState.value.isDragging || !dragState.value.clipId) return
-  
-  const audio = audioClips.value.find(a => a.id === dragState.value.clipId)
+
+  const audio = audioClips.value.find((a) => a.id === dragState.value.clipId)
   if (!audio) return
-  
+
   const deltaX = event.clientX - dragState.value.startX
   const deltaTime = deltaX / pixelsPerSecond.value
   const newPosition = Math.max(0, dragState.value.startPosition + deltaTime)
-  
+
   audio.position = newPosition
 }
 
 const handleDragAudioEnd = () => {
   dragState.value.isDragging = false
   dragState.value.clipId = null
-  
+
   document.removeEventListener('mousemove', handleDragAudioMove)
   document.removeEventListener('mouseup', handleDragAudioEnd)
-  
+
   // 重新排序
   audioClips.value.sort((a, b) => a.position - b.position)
   updateAudioClipOrders()
@@ -1208,7 +1263,7 @@ const handleDragAudioEnd = () => {
 // 调整音频片段大小
 const startResizeAudioClip = (event: MouseEvent, audio: AudioClip, side: 'left' | 'right') => {
   event.stopPropagation()
-  
+
   dragState.value = {
     isDragging: false,
     isResizing: true,
@@ -1217,9 +1272,9 @@ const startResizeAudioClip = (event: MouseEvent, audio: AudioClip, side: 'left' 
     startX: event.clientX,
     startPosition: audio.position,
     startTime: audio.start_time,
-    originalDuration: audio.duration
+    originalDuration: audio.duration,
   }
-  
+
   selectedAudioClipId.value = audio.id
   document.addEventListener('mousemove', handleResizeAudioMove)
   document.addEventListener('mouseup', handleResizeAudioEnd)
@@ -1227,24 +1282,24 @@ const startResizeAudioClip = (event: MouseEvent, audio: AudioClip, side: 'left' 
 
 const handleResizeAudioMove = (event: MouseEvent) => {
   if (!dragState.value.isResizing || !dragState.value.clipId) return
-  
-  const audio = audioClips.value.find(a => a.id === dragState.value.clipId)
+
+  const audio = audioClips.value.find((a) => a.id === dragState.value.clipId)
   if (!audio) return
-  
+
   const deltaX = event.clientX - dragState.value.startX
   const deltaTime = deltaX / pixelsPerSecond.value
-  
+
   if (dragState.value.resizeSide === 'left') {
     const newStartTime = Math.max(0, dragState.value.startTime + deltaTime)
     const maxStartTime = dragState.value.startTime + dragState.value.originalDuration - 0.1
-    
+
     audio.start_time = Math.min(newStartTime, maxStartTime)
     audio.position = dragState.value.startPosition + deltaTime
     audio.duration = dragState.value.originalDuration - (audio.start_time - dragState.value.startTime)
   } else {
     const newDuration = Math.max(0.1, dragState.value.originalDuration + deltaTime)
-    const maxDuration = (audio.end_time - audio.start_time)
-    
+    const maxDuration = audio.end_time - audio.start_time
+
     audio.duration = Math.min(newDuration, maxDuration)
     audio.end_time = audio.start_time + audio.duration
   }
@@ -1253,7 +1308,7 @@ const handleResizeAudioMove = (event: MouseEvent) => {
 const handleResizeAudioEnd = () => {
   dragState.value.isResizing = false
   dragState.value.clipId = null
-  
+
   document.removeEventListener('mousemove', handleResizeAudioMove)
   document.removeEventListener('mouseup', handleResizeAudioEnd)
 }
@@ -1277,13 +1332,13 @@ const dragState = ref<DragState>({
   startX: 0,
   startPosition: 0,
   startTime: 0,
-  originalDuration: 0
+  originalDuration: 0,
 })
 
 // 拖拽移动片段位置
 const startDragClip = (event: MouseEvent, clip: TimelineClip) => {
   if (dragState.value.isResizing) return
-  
+
   event.stopPropagation()
   dragState.value = {
     isDragging: true,
@@ -1292,9 +1347,9 @@ const startDragClip = (event: MouseEvent, clip: TimelineClip) => {
     startX: event.clientX,
     startPosition: clip.position,
     startTime: 0,
-    originalDuration: clip.duration
+    originalDuration: clip.duration,
   }
-  
+
   selectedClipId.value = clip.id
   document.addEventListener('mousemove', handleDragMove)
   document.addEventListener('mouseup', handleDragEnd)
@@ -1302,19 +1357,19 @@ const startDragClip = (event: MouseEvent, clip: TimelineClip) => {
 
 const handleDragMove = (event: MouseEvent) => {
   if (!dragState.value.clipId) return
-  
-  const clip = timelineClips.value.find(c => c.id === dragState.value.clipId)
+
+  const clip = timelineClips.value.find((c) => c.id === dragState.value.clipId)
   if (!clip) return
-  
+
   if (dragState.value.isDragging) {
     // 计算新位置
     const deltaX = event.clientX - dragState.value.startX
     const deltaTime = deltaX / pixelsPerSecond.value
     let newPosition = Math.max(0, dragState.value.startPosition + deltaTime)
-    
+
     // 吸附到其他片段边缘
     newPosition = snapToNearby(newPosition, clip.id, clip.duration)
-    
+
     clip.position = newPosition
     updateClipOrders()
   } else if (dragState.value.isResizing) {
@@ -1330,12 +1385,12 @@ const handleDragEnd = () => {
     startX: 0,
     startPosition: 0,
     startTime: 0,
-    originalDuration: 0
+    originalDuration: 0,
   }
-  
+
   document.removeEventListener('mousemove', handleDragMove)
   document.removeEventListener('mouseup', handleDragEnd)
-  
+
   // 重新排序片段并紧密连接
   timelineClips.value.sort((a, b) => a.position - b.position)
   compactClips()
@@ -1354,7 +1409,7 @@ const compactClips = () => {
 // 调整片段时长
 const startResizeClip = (event: MouseEvent, clip: TimelineClip, side: 'left' | 'right') => {
   event.stopPropagation()
-  
+
   dragState.value = {
     isDragging: false,
     isResizing: true,
@@ -1363,9 +1418,9 @@ const startResizeClip = (event: MouseEvent, clip: TimelineClip, side: 'left' | '
     startX: event.clientX,
     startPosition: clip.position,
     startTime: side === 'left' ? clip.start_time : clip.end_time,
-    originalDuration: clip.duration
+    originalDuration: clip.duration,
   }
-  
+
   selectedClipId.value = clip.id
   document.addEventListener('mousemove', handleDragMove)
   document.addEventListener('mouseup', handleDragEnd)
@@ -1374,33 +1429,33 @@ const startResizeClip = (event: MouseEvent, clip: TimelineClip, side: 'left' | '
 const handleResizeMove = (event: MouseEvent, clip: TimelineClip) => {
   const deltaX = event.clientX - dragState.value.startX
   const deltaTime = deltaX / pixelsPerSecond.value
-  
+
   if (dragState.value.resizeSide === 'left') {
     // 调整开始时间（不改变位置，只改变裁剪点）
     const newStartTime = Math.max(0, dragState.value.startTime + deltaTime)
     const maxStartTime = clip.end_time - 0.1 // 至少保留0.1秒
-    
+
     clip.start_time = Math.min(newStartTime, maxStartTime)
     clip.duration = clip.end_time - clip.start_time
-    
+
     // 调整左边缘后需要重新紧密连接
-    const clipIndex = timelineClips.value.findIndex(c => c.id === clip.id)
+    const clipIndex = timelineClips.value.findIndex((c) => c.id === clip.id)
     if (clipIndex > 0) {
       // 调整前面片段的结束位置
       compactClipsFromIndex(clipIndex)
     }
   } else {
     // 调整结束时间
-    const scene = props.scenes.find(s => s.id === clip.scene_id)
+    const scene = props.scenes.find((s) => s.id === clip.scene_id)
     const maxDuration = scene?.duration || 10
     const maxEndTime = clip.start_time + maxDuration
-    
+
     const newEndTime = Math.max(clip.start_time + 0.1, dragState.value.startTime + deltaTime)
     clip.end_time = Math.min(newEndTime, maxEndTime)
     clip.duration = clip.end_time - clip.start_time
-    
+
     // 调整右边缘后需要重新紧密连接后续片段
-    const clipIndex = timelineClips.value.findIndex(c => c.id === clip.id)
+    const clipIndex = timelineClips.value.findIndex((c) => c.id === clip.id)
     if (clipIndex < timelineClips.value.length - 1) {
       compactClipsFromIndex(clipIndex + 1)
     }
@@ -1410,7 +1465,7 @@ const handleResizeMove = (event: MouseEvent, clip: TimelineClip) => {
 // 从指定索引开始重新紧密排列片段
 const compactClipsFromIndex = (startIndex: number) => {
   if (startIndex >= timelineClips.value.length) return
-  
+
   for (let i = startIndex; i < timelineClips.value.length; i++) {
     if (i === 0) {
       timelineClips.value[i].position = 0
@@ -1424,28 +1479,28 @@ const compactClipsFromIndex = (startIndex: number) => {
 // 吸附到附近片段
 const snapToNearby = (position: number, clipId: string, duration: number): number => {
   const snapThreshold = 5 / pixelsPerSecond.value // 5像素的吸附范围
-  
+
   for (const other of timelineClips.value) {
     if (other.id === clipId) continue
-    
+
     const otherEnd = other.position + other.duration
-    
+
     // 吸附到前一个片段的结尾
     if (Math.abs(position - otherEnd) < snapThreshold) {
       return otherEnd
     }
-    
+
     // 吸附到后一个片段的开头
     if (Math.abs(position + duration - other.position) < snapThreshold) {
       return other.position - duration
     }
   }
-  
+
   // 吸附到起点
   if (position < snapThreshold) {
     return 0
   }
-  
+
   return position
 }
 
@@ -1462,10 +1517,52 @@ const zoomReset = () => {
   zoom.value = 1
 }
 
+// 播放头拖拽
+const playheadDragState = ref({
+  isDragging: false,
+  startX: 0,
+  startTime: 0,
+})
+
+const startDragPlayhead = (event: MouseEvent) => {
+  event.stopPropagation()
+  
+  playheadDragState.value = {
+    isDragging: true,
+    startX: event.clientX,
+    startTime: currentTime.value,
+  }
+  
+  // 暂停播放
+  if (isPlaying.value) {
+    pauseTimeline()
+  }
+  
+  document.addEventListener('mousemove', handlePlayheadDragMove)
+  document.addEventListener('mouseup', handlePlayheadDragEnd)
+}
+
+const handlePlayheadDragMove = (event: MouseEvent) => {
+  if (!playheadDragState.value.isDragging) return
+  
+  const deltaX = event.clientX - playheadDragState.value.startX
+  const deltaTime = deltaX / pixelsPerSecond.value
+  const newTime = Math.max(0, Math.min(totalDuration.value, playheadDragState.value.startTime + deltaTime))
+  
+  seekToTime(newTime)
+}
+
+const handlePlayheadDragEnd = () => {
+  playheadDragState.value.isDragging = false
+  
+  document.removeEventListener('mousemove', handlePlayheadDragMove)
+  document.removeEventListener('mouseup', handlePlayheadDragEnd)
+}
+
 // 时间线点击跳转
 const clickTimeline = (event: MouseEvent) => {
   if (dragState.value.isDragging || dragState.value.isResizing) return
-  
+
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   const clickX = event.clientX - rect.left - 100
   const newTime = Math.max(0, clickX / pixelsPerSecond.value)
@@ -1474,45 +1571,41 @@ const clickTimeline = (event: MouseEvent) => {
 
 const seekToTime = (time: number) => {
   currentTime.value = time
-  
+
   // 找到对应时间的视频片段并播放
-  const clip = timelineClips.value.find(c => 
-    time >= c.position && time < c.position + c.duration
-  )
-  
+  const clip = timelineClips.value.find((c) => time >= c.position && time < c.position + c.duration)
+
   if (clip && previewPlayer.value) {
     // 切换视频源（如果需要）
     if (previewPlayer.value.src !== clip.video_url) {
       previewPlayer.value.src = clip.video_url
     }
-    
+
     // 跳转到片段内的对应时间
     const offsetInClip = time - clip.position
     previewPlayer.value.currentTime = clip.start_time + offsetInClip
-    
+
     if (isPlaying.value) {
       previewPlayer.value.play()
     }
   }
-  
+
   // 同步音频播放器
   if (audioClips.value.length > 0 && audioPlayer.value) {
-    const audioClip = audioClips.value.find(a => 
-      time >= a.position && time < a.position + a.duration
-    )
-    
+    const audioClip = audioClips.value.find((a) => time >= a.position && time < a.position + a.duration)
+
     if (audioClip) {
       // 切换音频源（如果需要）
       if (audioPlayer.value.src !== audioClip.audio_url) {
         audioPlayer.value.src = audioClip.audio_url
       }
-      
+
       // 跳转到音频片段内的对应时间
       const offsetInAudioClip = time - audioClip.position
       audioPlayer.value.currentTime = audioClip.start_time + offsetInAudioClip
-      
+
       if (isPlaying.value) {
-        audioPlayer.value.play().catch(err => {
+        audioPlayer.value.play().catch((err) => {
           console.warn('音频播放失败:', err)
         })
       }
@@ -1529,14 +1622,14 @@ const playTimeline = () => {
     ElMessage.warning('时间线中没有视频片段')
     return
   }
-  
+
   isPlaying.value = true
-  
+
   // 找到当前时间对应的视频片段
-  const clip = timelineClips.value.find(c => 
-    currentTime.value >= c.position && currentTime.value < c.position + c.duration
+  const clip = timelineClips.value.find(
+    (c) => currentTime.value >= c.position && currentTime.value < c.position + c.duration,
   )
-  
+
   if (clip && previewPlayer.value) {
     if (previewPlayer.value.src !== clip.video_url) {
       previewPlayer.value.src = clip.video_url
@@ -1550,20 +1643,20 @@ const playTimeline = () => {
     seekToTime(0)
     previewPlayer.value?.play()
   }
-  
+
   // 同时播放音频（如果有）
   if (audioClips.value.length > 0 && audioPlayer.value) {
-    const audioClip = audioClips.value.find(a => 
-      currentTime.value >= a.position && currentTime.value < a.position + a.duration
+    const audioClip = audioClips.value.find(
+      (a) => currentTime.value >= a.position && currentTime.value < a.position + a.duration,
     )
-    
+
     if (audioClip) {
       if (audioPlayer.value.src !== audioClip.audio_url) {
         audioPlayer.value.src = audioClip.audio_url
       }
       const offsetInAudioClip = currentTime.value - audioClip.position
       audioPlayer.value.currentTime = audioClip.start_time + offsetInAudioClip
-      audioPlayer.value.play().catch(err => {
+      audioPlayer.value.play().catch((err) => {
         console.warn('音频播放失败:', err)
       })
     }
@@ -1593,7 +1686,7 @@ const togglePlay = () => {
 const handleKeyPress = (event: KeyboardEvent) => {
   // 如果在输入框中，不处理快捷键
   if ((event.target as HTMLElement).tagName === 'INPUT') return
-  
+
   switch (event.code) {
     case 'Space':
       event.preventDefault()
@@ -1607,7 +1700,7 @@ const handleKeyPress = (event: KeyboardEvent) => {
     case 'Backspace':
       if (selectedClipId.value) {
         event.preventDefault()
-        const clip = timelineClips.value.find(c => c.id === selectedClipId.value)
+        const clip = timelineClips.value.find((c) => c.id === selectedClipId.value)
         if (clip) removeClip(clip)
       }
       break
@@ -1639,26 +1732,38 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyPress)
   document.removeEventListener('mousemove', handleDragMove)
   document.removeEventListener('mouseup', handleDragEnd)
+  document.removeEventListener('mousemove', handlePlayheadDragMove)
+  document.removeEventListener('mouseup', handlePlayheadDragEnd)
 })
 
 // 进度显示辅助函数
 const getPhaseType = (phase: string) => {
   switch (phase) {
-    case 'loading': return 'info'
-    case 'processing': return 'warning'
-    case 'encoding': return 'warning'
-    case 'completed': return 'success'
-    default: return 'info'
+    case 'loading':
+      return 'info'
+    case 'processing':
+      return 'warning'
+    case 'encoding':
+      return 'warning'
+    case 'completed':
+      return 'success'
+    default:
+      return 'info'
   }
 }
 
 const getPhaseText = (phase: string) => {
   switch (phase) {
-    case 'loading': return '初始化'
-    case 'processing': return '处理中'
-    case 'encoding': return '编码中'
-    case 'completed': return '完成'
-    default: return '准备中'
+    case 'loading':
+      return '初始化'
+    case 'processing':
+      return '处理中'
+    case 'encoding':
+      return '编码中'
+    case 'completed':
+      return '完成'
+    default:
+      return '准备中'
   }
 }
 
@@ -1673,19 +1778,19 @@ const handleExport = async () => {
     // 计算总视频大小（粗略估算）
     const totalSize = timelineClips.value.length * 20 // 假设每个片段约20MB
     const estimatedTime = Math.ceil(totalSize / 50) // 每50MB约1分钟
-    
+
     await ElMessageBox.confirm(
       `即将在浏览器中合并 ${timelineClips.value.length} 个视频片段。\n\n` +
-      `预计处理时间：${estimatedTime}-${estimatedTime + 1} 分钟\n` +
-      `预计内存占用：约 ${Math.round(totalSize * 1.5)}MB\n\n` +
-      `处理期间请勿关闭页面。`,
+        `预计处理时间：${estimatedTime}-${estimatedTime + 1} 分钟\n` +
+        `预计内存占用：约 ${Math.round(totalSize * 1.5)}MB\n\n` +
+        `处理期间请勿关闭页面。`,
       '确认导出',
       {
         confirmButtonText: '开始合并',
         cancelButtonText: '取消',
         type: 'warning',
-        dangerouslyUseHTMLString: true
-      }
+        dangerouslyUseHTMLString: true,
+      },
     )
 
     mergeDialogVisible.value = true
@@ -1697,12 +1802,12 @@ const handleExport = async () => {
     })
 
     // 准备视频片段数据（包含转场信息）
-    const clips = timelineClips.value.map(clip => ({
+    const clips = timelineClips.value.map((clip) => ({
       url: clip.video_url,
       startTime: clip.start_time,
       endTime: clip.end_time,
       duration: clip.end_time - clip.start_time,
-      transition: clip.transition
+      transition: clip.transition,
     }))
 
     // 执行合并
@@ -1738,7 +1843,6 @@ const mergeVideoInBrowser = async () => {
     return
   }
 
-
   try {
     await ElMessageBox.confirm(
       '将在浏览器中使用FFmpeg合成视频。\n注意：处理时间较长，且会占用浏览器资源，请勿关闭页面。\n适合少量视频场景（1-5个）。\n是否继续？',
@@ -1746,8 +1850,8 @@ const mergeVideoInBrowser = async () => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning'
-      }
+        type: 'warning',
+      },
     )
 
     merging.value = true
@@ -1756,10 +1860,10 @@ const mergeVideoInBrowser = async () => {
     ElMessage.info('开始加载FFmpeg引擎...')
 
     // 准备剪辑数据
-    const clips = timelineClips.value.map(clip => ({
+    const clips = timelineClips.value.map((clip) => ({
       url: clip.video_url,
       startTime: clip.start_time,
-      endTime: clip.end_time
+      endTime: clip.end_time,
     }))
 
     // 使用FFmpeg合成
@@ -1784,7 +1888,7 @@ const mergeVideoInBrowser = async () => {
     if (error !== 'cancel') {
       ElMessage.error({
         message: `合成失败: ${error.message || '未知错误'}。请检查控制台或尝试服务器合成`,
-        duration: 5000
+        duration: 5000,
       })
     }
   } finally {
@@ -1808,8 +1912,8 @@ const submitTimelineForMerge = async () => {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
-        dangerouslyUseHTMLString: false
-      }
+        dangerouslyUseHTMLString: false,
+      },
     )
 
     serverMerging.value = true
@@ -1820,34 +1924,36 @@ const submitTimelineForMerge = async () => {
       clips: timelineClips.value.map((clip, index) => {
         console.log(`📹 片段 ${index}:`, {
           storyboard_id: clip.storyboard_id,
-          transition: clip.transition
+          asset_id: clip.asset_id,
+          transition: clip.transition,
         })
         return {
           storyboard_id: String(clip.storyboard_id),
+          asset_id: clip.asset_id, // 包含素材库ID
           order: index,
           start_time: clip.start_time,
           end_time: clip.end_time,
           duration: clip.duration,
-          transition: clip.transition || { type: 'none', duration: 0 }
+          transition: clip.transition || { type: 'none', duration: 0 },
         }
-      })
+      }),
     }
     console.log('📤 提交时间线数据:', JSON.stringify(timelineData, null, 2))
 
     // 调用后端API
     const { dramaAPI } = await import('@/api/drama')
     const result = await dramaAPI.finalizeEpisode(props.episodeId, timelineData)
-    
+
     // 如果有跳过的场景，显示警告
     if (result.warning) {
       ElMessage.warning({
         message: result.warning,
-        duration: 5000
+        duration: 5000,
       })
     } else {
       ElMessage.success('视频合成任务已提交，正在后台处理...')
     }
-    
+
     emit('merge-completed', result.merge_id || 0)
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -1865,10 +1971,10 @@ const updateClipsByStoryboardId = (storyboardId: string | number, newVideoUrl: s
   console.log('目标 storyboard_id:', storyboardId, '类型:', typeof storyboardId)
   console.log('新视频 URL:', newVideoUrl)
   console.log('当前时间线片段数量:', timelineClips.value.length)
-  
+
   let updated = false
   const targetId = String(storyboardId) // 统一转换为字符串进行比较
-  
+
   timelineClips.value.forEach((clip, index) => {
     console.log(`片段 ${index}: storyboard_id=${clip.storyboard_id} (类型: ${typeof clip.storyboard_id})`)
     if (String(clip.storyboard_id) === targetId) {
@@ -1879,7 +1985,7 @@ const updateClipsByStoryboardId = (storyboardId: string | number, newVideoUrl: s
       updated = true
     }
   })
-  
+
   if (updated) {
     console.log('✅ 时间线视频已更新')
     ElMessage.success('时间线中的视频已自动更新')
@@ -1889,7 +1995,7 @@ const updateClipsByStoryboardId = (storyboardId: string | number, newVideoUrl: s
 }
 
 defineExpose({
-  updateClipsByStoryboardId
+  updateClipsByStoryboardId,
 })
 </script>
 
@@ -1988,7 +2094,7 @@ defineExpose({
             background: rgba(0, 0, 0, 0.4);
           }
         }
-        
+
         .transition-overlay {
           position: absolute;
           top: 0;
@@ -1998,7 +2104,7 @@ defineExpose({
           pointer-events: none;
           z-index: 10;
         }
-        
+
         // 淡入淡出效果
         .transition-fade.transition-out {
           background: black;
@@ -2008,7 +2114,7 @@ defineExpose({
           background: black;
           animation: fadeIn forwards;
         }
-        
+
         // 黑场过渡
         .transition-fadeblack.transition-out {
           background: black;
@@ -2018,7 +2124,7 @@ defineExpose({
           background: black;
           animation: fadeIn forwards;
         }
-        
+
         // 白场过渡
         .transition-fadewhite.transition-out {
           background: white;
@@ -2028,7 +2134,7 @@ defineExpose({
           background: white;
           animation: fadeIn forwards;
         }
-        
+
         // 左滑
         .transition-slideleft.transition-out {
           background: black;
@@ -2038,7 +2144,7 @@ defineExpose({
           background: black;
           animation: slideLeftIn forwards;
         }
-        
+
         // 右滑
         .transition-slideright.transition-out {
           background: black;
@@ -2048,7 +2154,7 @@ defineExpose({
           background: black;
           animation: slideRightIn forwards;
         }
-        
+
         // 上滑
         .transition-slideup.transition-out {
           background: black;
@@ -2058,7 +2164,7 @@ defineExpose({
           background: black;
           animation: slideUpIn forwards;
         }
-        
+
         // 下滑
         .transition-slidedown.transition-out {
           background: black;
@@ -2068,55 +2174,95 @@ defineExpose({
           background: black;
           animation: slideDownIn forwards;
         }
-        
+
         @keyframes fadeOut {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
-        
+
         @keyframes fadeIn {
-          from { opacity: 1; }
-          to { opacity: 0; }
+          from {
+            opacity: 1;
+          }
+          to {
+            opacity: 0;
+          }
         }
-        
+
         @keyframes slideLeftOut {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
         }
-        
+
         @keyframes slideLeftIn {
-          from { transform: translateX(0); }
-          to { transform: translateX(-100%); }
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(-100%);
+          }
         }
-        
+
         @keyframes slideRightOut {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(0); }
+          from {
+            transform: translateX(-100%);
+          }
+          to {
+            transform: translateX(0);
+          }
         }
-        
+
         @keyframes slideRightIn {
-          from { transform: translateX(0); }
-          to { transform: translateX(100%); }
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(100%);
+          }
         }
-        
+
         @keyframes slideUpOut {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
         }
-        
+
         @keyframes slideUpIn {
-          from { transform: translateY(0); }
-          to { transform: translateY(-100%); }
+          from {
+            transform: translateY(0);
+          }
+          to {
+            transform: translateY(-100%);
+          }
         }
-        
+
         @keyframes slideDownOut {
-          from { transform: translateY(-100%); }
-          to { transform: translateY(0); }
+          from {
+            transform: translateY(-100%);
+          }
+          to {
+            transform: translateY(0);
+          }
         }
-        
+
         @keyframes slideDownIn {
-          from { transform: translateY(0); }
-          to { transform: translateY(100%); }
+          from {
+            transform: translateY(0);
+          }
+          to {
+            transform: translateY(100%);
+          }
         }
       }
 
@@ -2183,7 +2329,7 @@ defineExpose({
         &::-webkit-scrollbar-thumb {
           background: var(--border-secondary);
           border-radius: 4px;
-          
+
           &:hover {
             background: var(--border-primary);
           }
@@ -2201,7 +2347,7 @@ defineExpose({
           &:hover {
             border-color: var(--el-color-primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           }
 
           .delete-btn {
@@ -2380,6 +2526,8 @@ defineExpose({
           height: 100%;
           background: var(--accent);
           box-shadow: 0 0 8px rgba(14, 165, 233, 0.6);
+          pointer-events: auto;
+          cursor: ew-resize;
         }
 
         .playhead-handle {
@@ -2391,6 +2539,13 @@ defineExpose({
           background: var(--accent);
           border-radius: 50%;
           border: 2px solid var(--bg-card);
+          pointer-events: auto;
+          cursor: ew-resize;
+          transition: transform 0.2s ease;
+
+          &:hover {
+            transform: scale(1.2);
+          }
         }
       }
 
@@ -2533,7 +2688,7 @@ defineExpose({
               opacity: 1;
             }
           }
-          
+
           .transition-indicator {
             position: absolute;
             top: 50%;
@@ -2594,7 +2749,7 @@ defineExpose({
 
           .el-button {
             color: var(--text-muted);
-            
+
             &:hover {
               color: var(--accent);
             }

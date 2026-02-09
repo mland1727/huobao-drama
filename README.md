@@ -20,12 +20,16 @@
 
 Huobao Drama is an AI-powered short drama production platform that automates the entire workflow from script generation, character design, storyboarding to video composition.
 
+火宝短剧商业版地址：[火宝短剧商业版](https://drama.chatfire.site/shortvideo)
+
+火宝小说生成：[火宝小说生成](https://marketing.chatfire.site/huobao-novel/)
+
 ### 🎯 Core Features
 
 - **🤖 AI-Driven**: Parse scripts using large language models to extract characters, scenes, and storyboards
 - **🎨 Intelligent Creation**: AI-generated character portraits and scene backgrounds
 - **📹 Video Generation**: Automatic storyboard video generation using text-to-video and image-to-video models
-- **🔄 Complete Workflow**: End-to-end production workflow from idea to final video
+- **🔄 Complete Workflow**: End-to-end production workflow from idea to final video。
 
 ### 🛠️ Technical Architecture
 
@@ -234,6 +238,14 @@ Database tables are automatically created on first startup (using GORM AutoMigra
 ---
 
 ## 📦 Deployment
+
+### ☁️ Cloud One-Click Deployment (Recommended 3080Ti)
+
+👉 [优云智算，一键部署](https://www.compshare.cn/images/CaWEHpAA8t1H?referral_code=8hUJOaWz3YzG64FI2OlCiB&ytag=GPU_YY_YX_GitHub_huobaoai)
+
+> ⚠️ **Note**: Please save your data to local storage promptly when using cloud deployment
+
+---
 
 ### 🐳 Docker Deployment (Recommended)
 
@@ -554,7 +566,21 @@ A: GORM automatically creates tables on first startup, check logs to confirm mig
 
 ## 📋 Changelog
 
-### v1.0.2 (2026-01-16)
+### v1.0.4 (2026-01-27)
+
+#### 🚀 Major Updates
+
+- Introduced local storage strategy for generated content caching, effectively mitigating external resource link expiration risks
+- Implemented Base64 encoding for embedded reference image transmission
+- Fixed issue where shot image prompt state was not reset when switching shots
+- Fixed issue where video duration displayed as 0 when adding library videos
+- Added scene migration to episodes
+
+#### Historical Data Migration
+
+- Added migration script for processing historical data. For detailed instructions, please refer to [MIGRATE_README.md](MIGRATE_README.md)
+
+### v1.0.3 (2026-01-16)
 
 #### 🚀 Major Updates
 
@@ -563,7 +589,7 @@ A: GORM automatically creates tables on first startup, check logs to confirm mig
 - Docker cross-platform support for `host.docker.internal` to access host services
 - Streamlined documentation and deployment guides
 
-### v1.0.1 (2026-01-14)
+### v1.0.2 (2026-01-14)
 
 #### 🐛 Bug Fixes / 🔧 Improvements
 

@@ -24,17 +24,19 @@ func NewStoryboardCompositionService(db *gorm.DB, log *logger.Logger, imageGen *
 }
 
 type SceneCharacterInfo struct {
-	ID       uint    `json:"id"`
-	Name     string  `json:"name"`
-	ImageURL *string `json:"image_url,omitempty"`
+	ID        uint    `json:"id"`
+	Name      string  `json:"name"`
+	ImageURL  *string `json:"image_url,omitempty"`
+	LocalPath *string `json:"local_path,omitempty"`
 }
 
 type SceneBackgroundInfo struct {
-	ID       uint    `json:"id"`
-	Location string  `json:"location"`
-	Time     string  `json:"time"`
-	ImageURL *string `json:"image_url,omitempty"`
-	Status   string  `json:"status"`
+	ID        uint    `json:"id"`
+	Location  string  `json:"location"`
+	Time      string  `json:"time"`
+	ImageURL  *string `json:"image_url,omitempty"`
+	LocalPath *string `json:"local_path,omitempty"`
+	Status    string  `json:"status"`
 }
 
 type SceneCompositionInfo struct {
@@ -209,9 +211,10 @@ func (s *StoryboardCompositionService) GetScenesForEpisode(episodeID string) ([]
 		if len(storyboard.Characters) > 0 {
 			for _, char := range storyboard.Characters {
 				storyboardChar := SceneCharacterInfo{
-					ID:       char.ID,
-					Name:     char.Name,
-					ImageURL: char.ImageURL,
+					ID:        char.ID,
+					Name:      char.Name,
+					ImageURL:  char.ImageURL,
+					LocalPath: char.LocalPath,
 				}
 				storyboardInfo.Characters = append(storyboardInfo.Characters, storyboardChar)
 			}
@@ -221,11 +224,12 @@ func (s *StoryboardCompositionService) GetScenesForEpisode(episodeID string) ([]
 		if storyboard.SceneID != nil {
 			if scene, ok := sceneMap[*storyboard.SceneID]; ok {
 				storyboardInfo.Background = &SceneBackgroundInfo{
-					ID:       scene.ID,
-					Location: scene.Location,
-					Time:     scene.Time,
-					ImageURL: scene.ImageURL,
-					Status:   scene.Status,
+					ID:        scene.ID,
+					Location:  scene.Location,
+					Time:      scene.Time,
+					ImageURL:  scene.ImageURL,
+					LocalPath: scene.LocalPath,
+					Status:    scene.Status,
 				}
 			}
 		}
@@ -269,6 +273,8 @@ type UpdateSceneRequest struct {
 	Dialogue    *string `json:"dialogue"`
 	Description *string `json:"description"`
 	Duration    *int    `json:"duration"`
+	ImageURL    *string `json:"image_url"`
+	LocalPath   *string `json:"local_path"`
 	ImagePrompt *string `json:"image_prompt"`
 	VideoPrompt *string `json:"video_prompt"`
 }
@@ -316,6 +322,12 @@ func (s *StoryboardCompositionService) UpdateScene(sceneID string, req *UpdateSc
 	}
 	if req.Duration != nil {
 		updates["duration"] = *req.Duration
+	}
+	if req.ImageURL != nil {
+		updates["image_url"] = req.ImageURL
+	}
+	if req.LocalPath != nil {
+		updates["local_path"] = req.LocalPath
 	}
 	if req.ImagePrompt != nil {
 		updates["image_prompt"] = req.ImagePrompt
@@ -421,6 +433,54 @@ func (s *StoryboardCompositionService) UpdateScenePrompt(sceneID string, req *Up
 	return nil
 }
 
+type UpdateSceneInfoRequest struct {
+	Location    *string `json:"location"`
+	Time        *string `json:"time"`
+	Prompt      *string `json:"prompt"`
+	Description *string `json:"description"`
+	ImageURL    *string `json:"image_url"`
+	LocalPath   *string `json:"local_path"`
+}
+
+func (s *StoryboardCompositionService) UpdateSceneInfo(sceneID string, req *UpdateSceneInfoRequest) error {
+	var scene models.Scene
+	if err := s.db.Where("id = ?", sceneID).First(&scene).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("scene not found")
+		}
+		return fmt.Errorf("failed to find scene: %w", err)
+	}
+
+	updates := make(map[string]interface{})
+	if req.Location != nil {
+		updates["location"] = *req.Location
+	}
+	if req.Time != nil {
+		updates["time"] = *req.Time
+	}
+	if req.Prompt != nil {
+		updates["prompt"] = *req.Prompt
+	}
+	if req.Description != nil {
+		updates["description"] = *req.Description
+	}
+	if req.ImageURL != nil {
+		updates["image_url"] = *req.ImageURL
+	}
+	if req.LocalPath != nil {
+		updates["local_path"] = *req.LocalPath
+	}
+
+	if len(updates) > 0 {
+		if err := s.db.Model(&scene).Updates(updates).Error; err != nil {
+			return fmt.Errorf("failed to update scene: %w", err)
+		}
+	}
+
+	s.log.Infow("Scene info updated", "scene_id", sceneID, "updates", updates)
+	return nil
+}
+
 func (s *StoryboardCompositionService) DeleteScene(sceneID string) error {
 	var scene models.Scene
 	if err := s.db.Where("id = ?", sceneID).First(&scene).Error; err != nil {
@@ -448,29 +508,37 @@ func getStringValue(s *string) string {
 
 type CreateSceneRequest struct {
 	DramaID     uint   `json:"drama_id"`
+	EpisodeID   *uint  `json:"episode_id"` // 添加章节ID字段
 	Location    string `json:"location"`
+	Time        string `json:"time"`
 	Prompt      string `json:"prompt"`
 	ImageURL    string `json:"image_url"`
+	LocalPath   string `json:"local_path"`
 	Description string `json:"description"`
 }
 
 func (s *StoryboardCompositionService) CreateScene(req *CreateSceneRequest) (*models.Scene, error) {
 	scene := &models.Scene{
-		DramaID:  req.DramaID,
-		Location: req.Location,
-		Prompt:   req.Prompt,
-		Status:   "draft",
+		DramaID:   req.DramaID,
+		EpisodeID: req.EpisodeID, // 设置章节ID
+		Location:  req.Location,
+		Time:      req.Time,
+		Prompt:    req.Prompt,
+		Status:    "draft",
 	}
 
 	if req.ImageURL != "" {
 		scene.ImageURL = &req.ImageURL
 		scene.Status = "completed"
 	}
+	if req.LocalPath != "" {
+		scene.LocalPath = &req.LocalPath
+	}
 
 	if err := s.db.Create(scene).Error; err != nil {
 		return nil, fmt.Errorf("failed to create scene: %w", err)
 	}
 
-	s.log.Infow("Scene created successfully", "scene_id", scene.ID, "drama_id", scene.DramaID)
+	s.log.Infow("Scene created successfully", "scene_id", scene.ID, "drama_id", scene.DramaID, "episode_id", req.EpisodeID)
 	return scene, nil
 }

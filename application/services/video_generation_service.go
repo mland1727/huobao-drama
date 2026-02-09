@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	models "github.com/drama-generator/backend/domain/models"
 	"github.com/drama-generator/backend/infrastructure/external/ffmpeg"
 	"github.com/drama-generator/backend/infrastructure/storage"
 	"github.com/drama-generator/backend/pkg/logger"
+	"github.com/drama-generator/backend/pkg/utils"
 	"github.com/drama-generator/backend/pkg/video"
 	"gorm.io/gorm"
 )
@@ -21,9 +23,10 @@ type VideoGenerationService struct {
 	localStorage    *storage.LocalStorage
 	aiService       *AIService
 	ffmpeg          *ffmpeg.FFmpeg
+	promptI18n      *PromptI18n
 }
 
-func NewVideoGenerationService(db *gorm.DB, transferService *ResourceTransferService, localStorage *storage.LocalStorage, aiService *AIService, log *logger.Logger) *VideoGenerationService {
+func NewVideoGenerationService(db *gorm.DB, transferService *ResourceTransferService, localStorage *storage.LocalStorage, aiService *AIService, log *logger.Logger, promptI18n *PromptI18n) *VideoGenerationService {
 	service := &VideoGenerationService{
 		db:              db,
 		localStorage:    localStorage,
@@ -31,6 +34,7 @@ func NewVideoGenerationService(db *gorm.DB, transferService *ResourceTransferSer
 		aiService:       aiService,
 		log:             log,
 		ffmpeg:          ffmpeg.NewFFmpeg(log),
+		promptI18n:      promptI18n,
 	}
 
 	go service.RecoverPendingTasks()
@@ -47,11 +51,14 @@ type GenerateVideoRequest struct {
 	ReferenceMode string `json:"reference_mode"`
 
 	// 单图模式
-	ImageURL string `json:"image_url"`
+	ImageURL       string  `json:"image_url"`
+	ImageLocalPath *string `json:"image_local_path"` // 单图模式的本地路径
 
 	// 首尾帧模式
-	FirstFrameURL *string `json:"first_frame_url"`
-	LastFrameURL  *string `json:"last_frame_url"`
+	FirstFrameURL       *string `json:"first_frame_url"`
+	FirstFrameLocalPath *string `json:"first_frame_local_path"` // 首帧本地路径
+	LastFrameURL        *string `json:"last_frame_url"`
+	LastFrameLocalPath  *string `json:"last_frame_local_path"` // 尾帧本地路径
 
 	// 多图模式
 	ReferenceImageURLs []string `json:"reference_image_urls"`
@@ -117,16 +124,22 @@ func (s *VideoGenerationService) GenerateVideo(request *GenerateVideoRequest) (*
 
 	switch request.ReferenceMode {
 	case "single":
-		// 单图模式
-		if request.ImageURL != "" {
+		// 单图模式 - 优先使用 local_path
+		if request.ImageLocalPath != nil && *request.ImageLocalPath != "" {
+			videoGen.ImageURL = request.ImageLocalPath
+		} else if request.ImageURL != "" {
 			videoGen.ImageURL = &request.ImageURL
 		}
 	case "first_last":
-		// 首尾帧模式
-		if request.FirstFrameURL != nil {
+		// 首尾帧模式 - 优先使用 local_path
+		if request.FirstFrameLocalPath != nil && *request.FirstFrameLocalPath != "" {
+			videoGen.FirstFrameURL = request.FirstFrameLocalPath
+		} else if request.FirstFrameURL != nil {
 			videoGen.FirstFrameURL = request.FirstFrameURL
 		}
-		if request.LastFrameURL != nil {
+		if request.LastFrameLocalPath != nil && *request.LastFrameLocalPath != "" {
+			videoGen.LastFrameURL = request.LastFrameLocalPath
+		} else if request.LastFrameURL != nil {
 			videoGen.LastFrameURL = request.LastFrameURL
 		}
 	case "multiple":
@@ -166,6 +179,9 @@ func (s *VideoGenerationService) GenerateVideo(request *GenerateVideoRequest) (*
 		return nil, fmt.Errorf("failed to create record: %w", err)
 	}
 
+	// Start background goroutine to process video generation asynchronously
+	// This allows the API to return immediately while video generation happens in background
+	// CRITICAL: The goroutine will handle all video generation logic including API calls and polling
 	go s.ProcessVideoGeneration(videoGen.ID)
 
 	return videoGen, nil
@@ -176,6 +192,12 @@ func (s *VideoGenerationService) ProcessVideoGeneration(videoGenID uint) {
 	if err := s.db.First(&videoGen, videoGenID).Error; err != nil {
 		s.log.Errorw("Failed to load video generation", "error", err, "id", videoGenID)
 		return
+	}
+
+	// 获取drama的style信息
+	var drama models.Drama
+	if err := s.db.First(&drama, videoGen.DramaID).Error; err != nil {
+		s.log.Warnw("Failed to load drama for style", "error", err, "drama_id", videoGen.DramaID)
 	}
 
 	s.db.Model(&videoGen).Update("status", models.VideoStatusProcessing)
@@ -215,46 +237,121 @@ func (s *VideoGenerationService) ProcessVideoGeneration(videoGenID uint) {
 		opts = append(opts, video.WithSeed(*videoGen.Seed))
 	}
 
-	// 根据参考图模式添加相应的选项
+	// 根据参考图模式添加相应的选项，并将本地图片转换为base64
 	if videoGen.ReferenceMode != nil {
 		switch *videoGen.ReferenceMode {
 		case "first_last":
-			// 首尾帧模式
+			// 首尾帧模式 - 转换本地图片为base64
 			if videoGen.FirstFrameURL != nil {
-				opts = append(opts, video.WithFirstFrame(*videoGen.FirstFrameURL))
+				firstFrameBase64, err := s.convertImageToBase64(*videoGen.FirstFrameURL)
+				if err != nil {
+					s.log.Warnw("Failed to convert first frame to base64, using original URL", "error", err)
+					opts = append(opts, video.WithFirstFrame(*videoGen.FirstFrameURL))
+				} else {
+					opts = append(opts, video.WithFirstFrame(firstFrameBase64))
+				}
 			}
 			if videoGen.LastFrameURL != nil {
-				opts = append(opts, video.WithLastFrame(*videoGen.LastFrameURL))
+				lastFrameBase64, err := s.convertImageToBase64(*videoGen.LastFrameURL)
+				if err != nil {
+					s.log.Warnw("Failed to convert last frame to base64, using original URL", "error", err)
+					opts = append(opts, video.WithLastFrame(*videoGen.LastFrameURL))
+				} else {
+					opts = append(opts, video.WithLastFrame(lastFrameBase64))
+				}
 			}
 		case "multiple":
-			// 多图模式
+			// 多图模式 - 转换本地图片为base64
 			if videoGen.ReferenceImageURLs != nil {
 				var imageURLs []string
 				if err := json.Unmarshal([]byte(*videoGen.ReferenceImageURLs), &imageURLs); err == nil {
-					opts = append(opts, video.WithReferenceImages(imageURLs))
+					var base64Images []string
+					for _, imgURL := range imageURLs {
+						base64Img, err := s.convertImageToBase64(imgURL)
+						if err != nil {
+							s.log.Warnw("Failed to convert reference image to base64, using original URL", "error", err, "url", imgURL)
+							base64Images = append(base64Images, imgURL)
+						} else {
+							base64Images = append(base64Images, base64Img)
+						}
+					}
+					opts = append(opts, video.WithReferenceImages(base64Images))
 				}
 			}
 		}
 	}
 
 	// 构造imageURL参数（单图模式使用，其他模式传空字符串）
+	// 如果是本地图片，转换为base64
 	imageURL := ""
 	if videoGen.ImageURL != nil {
-		imageURL = *videoGen.ImageURL
+		base64Image, err := s.convertImageToBase64(*videoGen.ImageURL)
+		if err != nil {
+			s.log.Warnw("Failed to convert image to base64, using original URL", "error", err)
+			imageURL = *videoGen.ImageURL
+		} else {
+			imageURL = base64Image
+		}
 	}
 
-	result, err := client.GenerateVideo(imageURL, videoGen.Prompt, opts...)
+	// 构建完整的提示词：风格提示词 + 约束提示词 + 用户提示词
+	prompt := videoGen.Prompt
+
+	// 2. 添加视频约束提示词
+	// 根据参考图模式选择对应的约束提示词
+	referenceMode := "single" // 默认单图模式
+	if videoGen.ReferenceMode != nil {
+		referenceMode = *videoGen.ReferenceMode
+	}
+
+	// 如果是单图模式，需要检查图片是否为动作序列图
+	if referenceMode == "single" && videoGen.ImageGenID != nil {
+		var imageGen models.ImageGeneration
+		if err := s.db.First(&imageGen, *videoGen.ImageGenID).Error; err == nil {
+			// 如果图片的frame_type是action，使用动作序列约束提示词
+			if imageGen.FrameType != nil && *imageGen.FrameType == "action" {
+				referenceMode = "action_sequence"
+				s.log.Infow("Detected action sequence image in single mode",
+					"id", videoGenID,
+					"image_gen_id", *videoGen.ImageGenID,
+					"frame_type", *imageGen.FrameType)
+			}
+		}
+	}
+
+	constraintPrompt := s.promptI18n.GetVideoConstraintPrompt(referenceMode)
+	if constraintPrompt != "" {
+		prompt = constraintPrompt + "\n\n" + prompt
+		s.log.Infow("Added constraint prompt to video generation",
+			"id", videoGenID,
+			"reference_mode", referenceMode,
+			"constraint_prompt_length", len(constraintPrompt))
+	}
+
+	// 打印完整的提示词信息
+	s.log.Infow("Video generation prompts",
+		"id", videoGenID,
+		"user_prompt", videoGen.Prompt,
+		"constraint_prompt", constraintPrompt,
+		"final_prompt", prompt)
+
+	result, err := client.GenerateVideo(imageURL, prompt, opts...)
 	if err != nil {
 		s.log.Errorw("Video generation API call failed", "error", err, "id", videoGenID)
 		s.updateVideoGenError(videoGenID, err.Error())
 		return
 	}
 
+	// CRITICAL FIX: Validate TaskID before starting polling goroutine
+	// Empty TaskID would cause polling to fail silently or cause issues
 	if result.TaskID != "" {
 		s.db.Model(&videoGen).Updates(map[string]interface{}{
 			"task_id": result.TaskID,
 			"status":  models.VideoStatusProcessing,
 		})
+		// Start background goroutine to poll task status
+		// This allows the API to return immediately while video generation continues asynchronously
+		// The goroutine will poll until completion, failure, or timeout (max 300 attempts * 10s = 50 minutes)
 		go s.pollTaskStatus(videoGenID, result.TaskID, videoGen.Provider, videoGen.Model)
 		return
 	}
@@ -268,6 +365,14 @@ func (s *VideoGenerationService) ProcessVideoGeneration(videoGenID uint) {
 }
 
 func (s *VideoGenerationService) pollTaskStatus(videoGenID uint, taskID string, provider string, model string) {
+	// CRITICAL FIX: Validate taskID parameter to prevent invalid API calls
+	// Empty taskID would cause unnecessary API calls and potential errors
+	if taskID == "" {
+		s.log.Errorw("Invalid empty taskID for polling", "video_gen_id", videoGenID)
+		s.updateVideoGenError(videoGenID, "invalid task ID for polling")
+		return
+	}
+
 	client, err := s.getVideoClient(provider, model)
 	if err != nil {
 		s.log.Errorw("Failed to get video client for polling", "error", err)
@@ -275,10 +380,15 @@ func (s *VideoGenerationService) pollTaskStatus(videoGenID uint, taskID string, 
 		return
 	}
 
+	// Polling configuration: max 300 attempts with 10 second intervals
+	// Total maximum polling time: 300 * 10s = 50 minutes
+	// This prevents infinite polling if the task never completes
 	maxAttempts := 300
 	interval := 10 * time.Second
 
 	for attempt := 0; attempt < maxAttempts; attempt++ {
+		// Sleep before each poll attempt to avoid overwhelming the API
+		// First iteration sleeps before the first check (after 0 attempts)
 		time.Sleep(interval)
 
 		var videoGen models.VideoGeneration
@@ -287,72 +397,107 @@ func (s *VideoGenerationService) pollTaskStatus(videoGenID uint, taskID string, 
 			return
 		}
 
+		// CRITICAL FIX: Check if status was manually changed (e.g., cancelled by user)
+		// If status is no longer "processing", stop polling to avoid unnecessary API calls
+		// This prevents polling when the task has been cancelled or failed externally
 		if videoGen.Status != models.VideoStatusProcessing {
 			s.log.Infow("Video generation status changed, stopping poll", "id", videoGenID, "status", videoGen.Status)
 			return
 		}
 
+		// Poll the video generation API for task status
+		// Continue polling on transient errors (network issues, temporary API failures)
+		// Only stop on permanent errors or task completion
 		result, err := client.GetTaskStatus(taskID)
 		if err != nil {
-			s.log.Errorw("Failed to get task status", "error", err, "task_id", taskID)
+			s.log.Errorw("Failed to get task status", "error", err, "task_id", taskID, "attempt", attempt+1)
+			// Continue polling on error - might be transient network issue
+			// Will eventually timeout after maxAttempts if error persists
 			continue
 		}
 
+		// Check if task completed successfully
+		// CRITICAL FIX: Validate that video URL exists when task is marked as completed
+		// Some APIs may mark task as completed but fail to provide the video URL
 		if result.Completed {
 			if result.VideoURL != "" {
+				// Successfully completed with video URL - download and update database
 				s.completeVideoGeneration(videoGenID, result.VideoURL, &result.Duration, &result.Width, &result.Height, nil)
 				return
 			}
+			// Task marked as completed but no video URL - this is an error condition
 			s.updateVideoGenError(videoGenID, "task completed but no video URL")
 			return
 		}
 
+		// Check if task failed with an error message
 		if result.Error != "" {
 			s.updateVideoGenError(videoGenID, result.Error)
 			return
 		}
 
-		s.log.Infow("Video generation in progress", "id", videoGenID, "attempt", attempt+1)
+		// Task still in progress - log and continue polling
+		s.log.Infow("Video generation in progress", "id", videoGenID, "attempt", attempt+1, "max_attempts", maxAttempts)
 	}
 
-	s.updateVideoGenError(videoGenID, "polling timeout")
+	// CRITICAL FIX: Handle polling timeout gracefully
+	// After maxAttempts (50 minutes), mark task as failed if still not completed
+	// This prevents indefinite polling and resource waste
+	s.updateVideoGenError(videoGenID, fmt.Sprintf("polling timeout after %d attempts (%.1f minutes)", maxAttempts, float64(maxAttempts*int(interval))/60.0))
 }
 
 func (s *VideoGenerationService) completeVideoGeneration(videoGenID uint, videoURL string, duration *int, width *int, height *int, firstFrameURL *string) {
-	var localVideoPath string
+	var localVideoPath *string
 
-	// 下载视频到本地存储（仅用于缓存，不更新数据库）
+	// 下载视频到本地存储并保存相对路径到数据库
 	if s.localStorage != nil && videoURL != "" {
-		downloadedPath, err := s.localStorage.DownloadFromURL(videoURL, "videos")
+		downloadResult, err := s.localStorage.DownloadFromURLWithPath(videoURL, "videos")
 		if err != nil {
 			s.log.Warnw("Failed to download video to local storage",
 				"error", err,
 				"id", videoGenID,
 				"original_url", videoURL)
 		} else {
-			localVideoPath = downloadedPath
-			s.log.Infow("Video downloaded to local storage for caching",
+			localVideoPath = &downloadResult.RelativePath
+			s.log.Infow("Video downloaded to local storage",
 				"id", videoGenID,
 				"original_url", videoURL,
-				"local_path", localVideoPath)
+				"local_path", downloadResult.RelativePath)
 		}
 	}
 
 	// 如果视频已下载到本地，探测真实时长
-	if localVideoPath != "" && s.ffmpeg != nil {
-		if probedDuration, err := s.ffmpeg.GetVideoDuration(localVideoPath); err == nil {
+	// 特别是当 AI 服务返回的 duration 为 0 或 nil 时，必须探测
+	shouldProbe := localVideoPath != nil && s.ffmpeg != nil && (duration == nil || *duration == 0)
+	if shouldProbe {
+		absPath := s.localStorage.GetAbsolutePath(*localVideoPath)
+		if probedDuration, err := s.ffmpeg.GetVideoDuration(absPath); err == nil {
 			// 转换为整数秒（向上取整）
 			durationInt := int(probedDuration + 0.5)
 			duration = &durationInt
-			s.log.Infow("Probed video duration",
+			s.log.Infow("Probed video duration (was 0 or nil)",
 				"id", videoGenID,
 				"duration_seconds", durationInt,
 				"duration_float", probedDuration)
 		} else {
-			s.log.Warnw("Failed to probe video duration, using provided duration",
+			s.log.Errorw("Failed to probe video duration, duration will be 0",
 				"error", err,
 				"id", videoGenID,
-				"local_path", localVideoPath)
+				"local_path", *localVideoPath)
+		}
+	} else if localVideoPath != nil && s.ffmpeg != nil && duration != nil && *duration > 0 {
+		// 即使有 duration，也验证一下（可选）
+		absPath := s.localStorage.GetAbsolutePath(*localVideoPath)
+		if probedDuration, err := s.ffmpeg.GetVideoDuration(absPath); err == nil {
+			durationInt := int(probedDuration + 0.5)
+			if durationInt != *duration {
+				s.log.Warnw("Probed duration differs from provided duration",
+					"id", videoGenID,
+					"provided", *duration,
+					"probed", durationInt)
+				// 使用探测到的时长（更准确）
+				duration = &durationInt
+			}
 		}
 	}
 
@@ -371,12 +516,14 @@ func (s *VideoGenerationService) completeVideoGeneration(videoGenID uint, videoU
 		}
 	}
 
-	// 数据库中使用本地URL
+	// 数据库中保存原始URL和本地路径
 	updates := map[string]interface{}{
-		"status":    models.VideoStatusCompleted,
-		"video_url": localVideoPath,
+		"status":     models.VideoStatusCompleted,
+		"video_url":  videoURL,
+		"local_path": localVideoPath,
 	}
-	if duration != nil {
+	// 只有当 duration 大于 0 时才保存，避免保存无效的 0 值
+	if duration != nil && *duration > 0 {
 		updates["duration"] = *duration
 	}
 	if width != nil {
@@ -401,7 +548,8 @@ func (s *VideoGenerationService) completeVideoGeneration(videoGenID uint, videoU
 			storyboardUpdates := map[string]interface{}{
 				"video_url": videoURL,
 			}
-			if duration != nil {
+			// 只有当 duration 大于 0 时才更新，避免用无效的 0 值覆盖
+			if duration != nil && *duration > 0 {
 				storyboardUpdates["duration"] = *duration
 			}
 			if err := s.db.Model(&models.Storyboard{}).Where("id = ?", *videoGen.StoryboardID).Updates(storyboardUpdates).Error; err != nil {
@@ -482,7 +630,9 @@ func (s *VideoGenerationService) getVideoClient(provider string, modelName strin
 
 func (s *VideoGenerationService) RecoverPendingTasks() {
 	var pendingVideos []models.VideoGeneration
-	if err := s.db.Where("status = ? AND task_id != ''", models.VideoStatusProcessing).Find(&pendingVideos).Error; err != nil {
+	// Query for pending tasks with non-empty task_id
+	// Note: Using IS NOT NULL and != '' to ensure we only get valid task IDs
+	if err := s.db.Where("status = ? AND task_id IS NOT NULL AND task_id != ''", models.VideoStatusProcessing).Find(&pendingVideos).Error; err != nil {
 		s.log.Errorw("Failed to load pending video tasks", "error", err)
 		return
 	}
@@ -490,6 +640,16 @@ func (s *VideoGenerationService) RecoverPendingTasks() {
 	s.log.Infow("Recovering pending video generation tasks", "count", len(pendingVideos))
 
 	for _, videoGen := range pendingVideos {
+		// CRITICAL FIX: Check for nil TaskID before dereferencing to prevent panic
+		// Even though we filter for non-empty task_id, GORM might still return nil pointers
+		// This nil check prevents a potential runtime panic
+		if videoGen.TaskID == nil || *videoGen.TaskID == "" {
+			s.log.Warnw("Skipping video generation with nil or empty TaskID", "id", videoGen.ID)
+			continue
+		}
+
+		// Start goroutine to poll task status for each pending video
+		// Each goroutine will poll independently until completion or timeout
 		go s.pollTaskStatus(videoGen.ID, *videoGen.TaskID, videoGen.Provider, videoGen.Model)
 	}
 }
@@ -597,4 +757,56 @@ func (s *VideoGenerationService) BatchGenerateVideosForEpisode(episodeID string)
 
 func (s *VideoGenerationService) DeleteVideoGeneration(id uint) error {
 	return s.db.Delete(&models.VideoGeneration{}, id).Error
+}
+
+// convertImageToBase64 将图片转换为base64格式
+// 优先使用本地存储的图片，如果没有则使用URL
+func (s *VideoGenerationService) convertImageToBase64(imageURL string) (string, error) {
+	// 如果已经是base64格式，直接返回
+	if strings.HasPrefix(imageURL, "data:") {
+		return imageURL, nil
+	}
+
+	// 尝试从本地存储读取
+	if s.localStorage != nil {
+		var relativePath string
+
+		// 1. 检查是否是本地URL（包含 /static/）
+		if strings.Contains(imageURL, "/static/") {
+			// 提取相对路径，例如从 "http://localhost:5678/static/images/xxx.jpg" 提取 "images/xxx.jpg"
+			parts := strings.Split(imageURL, "/static/")
+			if len(parts) == 2 {
+				relativePath = parts[1]
+			}
+		} else if !strings.HasPrefix(imageURL, "http://") && !strings.HasPrefix(imageURL, "https://") {
+			// 2. 如果不是 HTTP/HTTPS URL，视为相对路径（如 "images/xxx.jpg"）
+			relativePath = imageURL
+		}
+
+		// 如果识别出相对路径，尝试读取本地文件
+		if relativePath != "" {
+			absPath := s.localStorage.GetAbsolutePath(relativePath)
+
+			// 使用工具函数转换为base64
+			base64Str, err := utils.ImageToBase64(absPath)
+			if err == nil {
+				s.log.Infow("Converted local image to base64", "path", relativePath)
+				return base64Str, nil
+			}
+			s.log.Warnw("Failed to convert local image to base64, will try URL", "error", err, "path", absPath)
+		}
+	}
+
+	// 如果本地读取失败或不是本地路径，尝试从URL下载并转换
+	base64Str, err := utils.ImageToBase64(imageURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert image to base64: %w", err)
+	}
+
+	urlLen := len(imageURL)
+	if urlLen > 50 {
+		urlLen = 50
+	}
+	s.log.Infow("Converted remote image to base64", "url", imageURL[:urlLen])
+	return base64Str, nil
 }

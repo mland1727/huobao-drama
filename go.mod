@@ -4,6 +4,8 @@ go 1.24.0
 
 toolchain go1.24.12
 
+replace github.com/drama-generator/backend => ./
+
 require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.6.0
