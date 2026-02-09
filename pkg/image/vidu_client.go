@@ -72,6 +72,7 @@ type ViduTaskQueryResponse struct {
 // NewViduImageClient 创建新的 Vidu 客户端
 // model 模型名称 可选值：viduq2、viduq1;
 // viduq2：支持文生图、图片编辑、参考生图 viduq1：支持参考生图
+// 调用一次消耗6积分，1积分0.03125元，即每次调用约0.1875元人民币
 func NewViduImageClient(baseURL, apiKey, model, endpoint string) *ViduClient {
 	if model == "" {
 		model = "viduq2" // 默认使用 viduq2
@@ -163,8 +164,8 @@ func (c *ViduClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageRe
 	httpReq.Body = io.NopCloser(bytes.NewReader(reqBody))
 
 	// 打印请求header和body
-	fmt.Printf("Vidu: 请求Header: %v\n", httpReq.Header)
-	fmt.Printf("Vidu: 请求Body: %s\n", string(reqBody))
+	// fmt.Printf("Vidu: 请求Header: %v\n", httpReq.Header)
+	// fmt.Printf("Vidu: 请求Body: %s\n", string(reqBody))
 
 	resp, err := c.HTTPClient.Do(httpReq)
 	if err != nil {
@@ -207,10 +208,11 @@ func (c *ViduClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageRe
 
 // GetTaskStatus 查询任务状态
 func (c *ViduClient) GetTaskStatus(taskID string) (*ImageResult, error) {
+	// 构建请求URL
 	endpoint := fmt.Sprintf("tasks/%s/creations", taskID)
 	url := c.BaseURL + endpoint
 
-	fmt.Printf("Vidu: 查询任务状态: %s\n", taskID)
+	fmt.Printf("Vidu: 查询状态地址: %s\n", url)
 
 	httpReq, err := http.NewRequestWithContext(c.ctx, "GET", url, nil)
 	if err != nil {
