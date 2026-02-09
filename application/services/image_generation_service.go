@@ -100,7 +100,7 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 	}
 	// 注意：SceneID可能指向Scene或Storyboard表，调用方已经做过权限验证，这里不再重复验证
 
-	// 厂商
+	// 模型厂商，默认vidu
 	provider := request.Provider
 	if provider == "" {
 		provider = "vidu"
@@ -163,7 +163,7 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 	return imageGen, nil
 }
 
-// 。ProcessImageGeneration 处理图片生成任务
+// ProcessImageGeneration 处理图片生成任务
 func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	var imageGen models.ImageGeneration
 	imageRatio := s.config.Style.DefaultImageRatio

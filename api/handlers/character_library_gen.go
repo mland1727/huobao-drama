@@ -21,6 +21,7 @@ func (h *CharacterLibraryHandler) GenerateCharacterImage(c *gin.Context) {
 		return
 	}
 
+	// 调用服务层生成角色图片
 	imageGen, err := h.libraryService.GenerateCharacterImage(characterID, h.imageService, req.Model, req.Style)
 	if err != nil {
 		if err.Error() == "character not found" {

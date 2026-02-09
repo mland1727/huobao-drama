@@ -345,7 +345,7 @@ func (s *CharacterLibraryService) GenerateCharacterImage(characterID string, ima
 		DramaID:     dramaIDStr,
 		CharacterID: &character.ID,
 		ImageType:   imageType,
-		Prompt:      prompt,
+		Prompt:      prompt,      // 生成提示词
 		Provider:    "openai",    // 或从配置读取
 		Model:       modelName,   // 使用用户指定的模型
 		Size:        "2560x1440", // 3,686,400像素，满足API最低要求（16:9比例）
