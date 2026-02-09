@@ -231,11 +231,10 @@ const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
     { id: 'volcengine', name: '火山引擎', models: ['doubao-seed-1.8', 'doubao-seed-1.6', 'doubao-seed-1-6-lite-251015', 'doubao-seed-1.6-flash', 'doubao-1.5-pro-32k'] },
   ],
   image: [
-    { 
-      id: 'volcengine', 
-      name: '火山引擎', 
-      models: ['doubao-seedream-4-5-251128', 'doubao-seedream-4-0-250828']
-    },
+    { id: 'volcengine', name: '火山引擎', models: ['doubao-seedream-4-5-251128', 'doubao-seedream-4-0-250828'] },
+    // viduq2: 支持文生图、图片编辑、参考生图
+    // viduq1: 支持参考生图
+    { id: 'vidu', name: 'VIDU', models: ['viduq2', 'viduq1'] },
     { 
       id: 'chatfire', 
       name: 'Chatfire', 
@@ -547,6 +546,8 @@ const handleProviderChange = () => {
     form.base_url = 'https://api.minimaxi.com/v1'
   } else if (form.provider === 'volces' || form.provider === 'volcengine') {
     form.base_url = 'https://ark.cn-beijing.volces.com/api/v3'
+  } else if (form.provider === 'vidu') {
+    form.base_url = 'https://api.vidu.cn/ent/v2'
   } else if (form.provider === 'openai') {
     form.base_url = 'https://api.openai.com/v1'
   } else {

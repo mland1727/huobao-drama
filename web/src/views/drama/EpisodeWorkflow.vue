@@ -5,30 +5,30 @@
         <template #left>
           <el-button text @click="$router.back()" class="back-btn">
             <el-icon><ArrowLeft /></el-icon>
-            <span>{{ $t('workflow.backToProject') }}</span>
+            <span>返回项目</span>
           </el-button>
-          <h1 class="header-title">{{ $t('workflow.episodeProduction', { number: episodeNumber }) }}</h1>
+          <h1 class="header-title">第{{ episodeNumber }}章制作</h1>
         </template>
         <template #center>
           <div class="custom-steps">
             <div class="step-item" :class="{ active: currentStep >= 0, current: currentStep === 0 }">
               <div class="step-circle">1</div>
-              <span class="step-text">{{ $t('workflow.steps.content') }}</span>
+              <span class="step-text">章节内容</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
             <div class="step-item" :class="{ active: currentStep >= 1, current: currentStep === 1 }">
               <div class="step-circle">2</div>
-              <span class="step-text">{{ $t('workflow.steps.generateImages') }}</span>
+              <span class="step-text">生成图片</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
             <div class="step-item" :class="{ active: currentStep >= 2, current: currentStep === 2 }">
               <div class="step-circle">3</div>
-              <span class="step-text">{{ $t('workflow.steps.splitStoryboard') }}</span>
+              <span class="step-text">拆分分镜</span>
             </div>
           </div>
         </template>
         <template #right>
-          <el-button :icon="Setting" @click="showModelConfigDialog" :title="$t('workflow.modelConfig')">
+          <el-button :icon="Setting" @click="showModelConfigDialog" title="图文配置">
             图文配置
           </el-button>
         </template>
@@ -42,7 +42,7 @@
           <el-input
             v-model="scriptContent"
             type="textarea"
-:placeholder="$t('workflow.scriptPlaceholder')"
+            :placeholder="'请输入章节内容...'"
             class="script-textarea script-textarea-fullscreen"
           />
 
@@ -54,7 +54,7 @@
               :disabled="!scriptContent.trim() || generatingScript"
             >
               <el-icon><Check /></el-icon>
-              <span>{{ $t('workflow.saveChapter') }}</span>
+              <span>保存章节</span>
             </el-button>
           </div>
         </div>
@@ -62,8 +62,8 @@
         <!-- 已保存时显示内容 -->
         <div v-if="hasScript" class="overview-section">
           <div class="episode-info">
-            <h3>{{ $t('workflow.chapterContent', { number: episodeNumber }) }}</h3>
-            <el-tag type="success" size="large">{{ $t('workflow.saved') }}</el-tag>
+            <h3>章节内容 {{ episodeNumber }}</h3>
+            <el-tag type="success" size="large">已保存</el-tag>
           </div>
           <div class="overview-content">
             <el-input 
@@ -86,16 +86,16 @@
             >
               <template #title>
                 <div style="display: flex; align-items: center; gap: 16px;">
-                  <span>✅ {{ $t('workflow.extractedData') }}</span>
-                  <el-tag v-if="hasCharacters" type="success">{{ $t('workflow.characters') }}: {{ charactersCount }}</el-tag>
-                  <el-tag v-if="currentEpisode?.scenes" type="success">{{ $t('workflow.scenes') }}: {{ currentEpisode.scenes.length }}</el-tag>
+                  <span>✅ 已提取数据</span>
+                  <el-tag v-if="hasCharacters" type="success">角色: {{ charactersCount }}</el-tag>
+                  <el-tag v-if="currentEpisode?.scenes" type="success">场景: {{ currentEpisode.scenes.length }}</el-tag>
                 </div>
               </template>
             </el-alert>
             
             <!-- 角色列表 -->
             <div v-if="hasCharacters" style="margin-bottom: 16px;">
-              <h4 class="extracted-title">{{ $t('workflow.extractedCharacters') }}：</h4>
+              <h4 class="extracted-title">提取的角色：</h4>
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 <el-tag 
                   v-for="char in currentEpisode?.characters" 
@@ -109,7 +109,7 @@
             
             <!-- 场景列表 -->
             <div v-if="currentEpisode?.scenes && currentEpisode.scenes.length > 0">
-              <h4 class="extracted-title">{{ $t('workflow.extractedScenes') }}：</h4>
+              <h4 class="extracted-title">提取的场景：</h4>
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 <el-tag 
                   v-for="scene in currentEpisode.scenes" 
@@ -133,7 +133,7 @@
               :disabled="!hasScript"
             >
               <el-icon><MagicStick /></el-icon>
-              {{ hasExtractedData ? $t('workflow.reExtract') : $t('workflow.extractCharactersAndScenes') }}
+              {{ hasExtractedData ? '重新提取角色和场景' : '提取角色和场景' }}
             </el-button>
             <el-button 
               type="success"
@@ -141,15 +141,13 @@
               @click="nextStep"
               :disabled="!hasExtractedData"
             >
-              {{ $t('workflow.nextStepGenerateImages') }}
+              下一步：生成图片
               <el-icon><ArrowRight /></el-icon>
             </el-button>
             <div v-if="!hasExtractedData" style="margin-top: 8px;">
               <el-alert type="warning" :closable="false" style="display: inline-block;">
                 <template #title>
-                  <span style="font-size: 12px;">
-                    {{ $t('workflow.extractWarning') }}
-                  </span>
+                  <span style="font-size: 12px;">请先点击“提取角色和场景”按钮，完成提取后才能生成图片</span>
                 </template>
               </el-alert>
             </div>
@@ -167,14 +165,14 @@
             <div class="section-title">
               <h3>
                 <el-icon><User /></el-icon>
-                {{ $t('workflow.characterImages') }}
+                角色图片
               </h3>
               <el-alert 
                 type="info"
                 :closable="false"
                 style="margin: 0;"
               >
-                {{ $t('workflow.characterCount', { count: charactersCount }) }}
+                角色数量: {{ charactersCount }}
               </el-alert>
             </div>
             <div class="section-actions">
@@ -183,7 +181,7 @@
                 @change="toggleSelectAllCharacters"
                 style="margin-right: 12px;"
               >
-                {{ $t('workflow.selectAll') }}
+                全选
               </el-checkbox>
               <el-button 
                 type="primary"
@@ -192,7 +190,7 @@
                 :disabled="selectedCharacterIds.length === 0"
                 size="default"
               >
-                {{ $t('workflow.batchGenerate') }} ({{ selectedCharacterIds.length }})
+                批量生成 ({{ selectedCharacterIds.length }})
               </el-button>
             </div>
           </div>
@@ -216,7 +214,7 @@
                     :icon="Delete"
                     circle
                     @click="deleteCharacter(char.id)"
-:title="$t('workflow.deleteCharacter')"
+                    title="删除角色"
                   />
                 </div>
                 
@@ -226,22 +224,22 @@
                   </div>
                   <div v-else-if="char.image_generation_status === 'pending' || char.image_generation_status === 'processing' || generatingCharacterImages[char.id]" class="char-placeholder generating">
                     <el-icon :size="64" class="rotating"><Loading /></el-icon>
-                    <span>{{ $t('common.generating') }}</span>
-                    <el-tag type="warning" size="small" style="margin-top: 8px;">{{ char.image_generation_status === 'pending' ? $t('common.queuing') : $t('common.processing') }}</el-tag>
+                    <span>生成中</span>
+                    <el-tag type="warning" size="small" style="margin-top: 8px;">{{ char.image_generation_status === 'pending' ? '排队中' : '处理中' }}</el-tag>
                   </div>
                   <div v-else-if="char.image_generation_status === 'failed'" class="char-placeholder failed">
                     <el-icon :size="64"><WarningFilled /></el-icon>
-                    <span>{{ $t('common.generateFailed') }}</span>
-                    <el-tag type="danger" size="small" style="margin-top: 8px;">{{ $t('common.clickToRegenerate') }}</el-tag>
+                    <span>生成失败</span>
+                    <el-tag type="danger" size="small" style="margin-top: 8px;">点击重新生成</el-tag>
                   </div>
                   <div v-else class="char-placeholder">
                     <el-icon :size="64"><User /></el-icon>
-                    <span>{{ $t('common.notGenerated') }}</span>
+                    <span>未生成</span>
                   </div>
                 </div>
 
                 <div class="card-actions">
-                  <el-tooltip :content="$t('tooltip.editPrompt')" placement="top">
+                  <el-tooltip content="修改提示词" placement="top">
                     <el-button 
                       size="small" 
                       @click="openPromptDialog(char, 'character')"
@@ -249,7 +247,7 @@
                       circle
                     />
                   </el-tooltip>
-                  <el-tooltip :content="$t('tooltip.aiGenerate')" placement="top">
+                  <el-tooltip content="AI生成" placement="top">
                     <el-button 
                       type="primary"
                       size="small" 
@@ -259,7 +257,7 @@
                       circle
                     />
                   </el-tooltip>
-                  <el-tooltip :content="$t('tooltip.uploadImage')" placement="top">
+                  <el-tooltip content="上传图片" placement="top">
                     <el-button 
                       size="small" 
                       @click="uploadCharacterImage(char.id)"
@@ -267,7 +265,7 @@
                       circle
                     />
                   </el-tooltip>
-                  <el-tooltip :content="$t('tooltip.selectFromLibrary')" placement="top">
+                  <el-tooltip content="从图库选择" placement="top">
                     <el-button 
                       size="small" 
                       @click="selectFromLibrary(char.id)"
@@ -275,7 +273,7 @@
                       circle
                     />
                   </el-tooltip>
-                  <el-tooltip :content="$t('workflow.addToLibrary')" placement="top">
+                  <el-tooltip content="添加到图库" placement="top">
                     <el-button 
                       size="small" 
                       @click="addToCharacterLibrary(char)"
@@ -298,14 +296,14 @@
             <div class="section-title">
               <h3>
                 <el-icon><Place /></el-icon>
-                {{ $t('workflow.sceneImages') }}
+                场景图片
               </h3>
               <el-alert 
                 type="info"
                 :closable="false"
                 style="margin: 0;"
               >
-                {{ $t('workflow.sceneCount', { count: drama?.scenes?.length || 0 }) }}
+                场景数量：{{ drama?.scenes?.length || 0 }}
               </el-alert>
             </div>
             <div class="section-actions">
@@ -314,7 +312,7 @@
                 @change="toggleSelectAllScenes"
                 style="margin-right: 12px;"
               >
-                {{ $t('workflow.selectAll') }}
+                全选
               </el-checkbox>
               <el-button 
                 type="primary"
@@ -323,7 +321,7 @@
                 :disabled="selectedSceneIds.length === 0"
                 size="default"
               >
-                {{ $t('workflow.batchGenerateSelected') }} ({{ selectedSceneIds.length }})
+                批量生成选中场景 ({{ selectedSceneIds.length }})
               </el-button>
             </div>
           </div>
@@ -349,22 +347,22 @@
                   </div>
                   <div v-else-if="scene.image_generation_status === 'pending' || scene.image_generation_status === 'processing' || generatingSceneImages[scene.id]" class="scene-placeholder generating">
                     <el-icon :size="64" class="rotating"><Loading /></el-icon>
-                    <span>{{ $t('common.generating') }}</span>
-                    <el-tag type="warning" size="small" style="margin-top: 8px;">{{ scene.image_generation_status === 'pending' ? $t('common.queuing') : $t('common.processing') }}</el-tag>
+                    <span>生成中</span>
+                    <el-tag type="warning" size="small" style="margin-top: 8px;">{{ scene.image_generation_status === 'pending' ? '排队中' : '处理中' }}</el-tag>
                   </div>
                   <div v-else-if="scene.image_generation_status === 'failed'" class="scene-placeholder failed" @click="generateSceneImage(scene.id)" style="cursor: pointer;">
                     <el-icon :size="64"><WarningFilled /></el-icon>
-                    <span>{{ $t('common.generateFailed') }}</span>
-                    <el-tag type="danger" size="small" style="margin-top: 8px;">{{ $t('common.clickToRegenerate') }}</el-tag>
+                    <span>生成失败</span>
+                    <el-tag type="danger" size="small" style="margin-top: 8px;">点击重新生成</el-tag>
                   </div>
                   <div v-else class="scene-placeholder">
                     <el-icon :size="64"><Place /></el-icon>
-                    <span>{{ $t('common.notGenerated') }}</span>
+                    <span>未生成</span>
                   </div>
                 </div>
 
                 <div class="card-actions">
-                  <el-tooltip :content="$t('tooltip.editPrompt')" placement="top">
+                  <el-tooltip content="编辑提示" placement="top">
                     <el-button 
                       size="small" 
                       @click="openPromptDialog(scene, 'scene')"
@@ -372,7 +370,7 @@
                       circle
                     />
                   </el-tooltip>
-                  <el-tooltip :content="$t('tooltip.aiGenerate')" placement="top">
+                  <el-tooltip content="AI生成" placement="top">
                     <el-button 
                       type="primary"
                       size="small" 
@@ -382,7 +380,7 @@
                       circle
                     />
                   </el-tooltip>
-                  <el-tooltip :content="$t('tooltip.uploadImage')" placement="top">
+                  <el-tooltip content="上传图片" placement="top">
                     <el-button 
                       size="small" 
                       @click="uploadSceneImage(scene.id)"
@@ -401,7 +399,7 @@
         <div class="action-buttons">
           <el-button size="large" @click="prevStep">
             <el-icon><ArrowLeft /></el-icon>
-            {{ $t('workflow.prevStep') }}
+            上一步
           </el-button>
           <el-button 
             type="success"
@@ -409,14 +407,14 @@
             @click="nextStep"
             :disabled="!allImagesGenerated"
           >
-            {{ $t('workflow.nextStepSplitShots') }}
+            下一步：拆分分镜
             <el-icon><ArrowRight /></el-icon>
           </el-button>
           <div v-if="!allImagesGenerated" style="margin-top: 8px;">
             <el-alert type="warning" :closable="false" style="display: inline-block;">
               <template #title>
                 <span style="font-size: 12px;">
-                  {{ $t('workflow.generateAllImagesFirst') }}
+                  请先生成所有角色和场景图片后再进行分镜拆分
                 </span>
               </template>
             </el-alert>
@@ -431,27 +429,27 @@
         <!-- 分镜列表 -->
         <div v-if="currentEpisode?.storyboards && currentEpisode.storyboards.length > 0" class="shots-list">
           <div class="shots-header">
-            <h3>{{ $t('workflow.shotList') }}</h3>
+            <h3>分镜列表</h3>
           </div>
           
           <el-table :data="currentEpisode.storyboards" border stripe style="margin-top: 16px;">
-            <el-table-column type="index" :label="$t('storyboard.table.number')" width="60" />
-            <el-table-column :label="$t('storyboard.table.title')" width="120" show-overflow-tooltip>
+            <el-table-column type="index" label="编号" width="60" />
+            <el-table-column label="标题" width="120" show-overflow-tooltip>
               <template #default="{ row }">
                 {{ row.title || '-' }}
               </template>
             </el-table-column>
-            <el-table-column :label="$t('storyboard.table.shotType')" width="80">
+            <el-table-column label="镜头类型" width="80">
               <template #default="{ row }">
                 {{ row.shot_type || '-' }}
               </template>
             </el-table-column>
-            <el-table-column :label="$t('storyboard.table.movement')" width="80">
+            <el-table-column label="运动" width="80">
               <template #default="{ row }">
                 {{ row.movement || '-' }}
               </template>
             </el-table-column>
-            <el-table-column :label="$t('storyboard.table.location')" width="150">
+            <el-table-column label="地点" width="150">
               <template #default="{ row }">
                 <el-popover 
                   placement="right" 
@@ -466,7 +464,7 @@
                 </el-popover>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('storyboard.table.character')" width="100">
+            <el-table-column label="角色" width="100">
               <template #default="{ row }">
                 <span v-if="row.characters && row.characters.length > 0">
                   {{ row.characters.map(c => c.name || c).join(', ') }}
@@ -474,7 +472,7 @@
                 <span v-else>-</span>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('storyboard.table.action')">
+            <el-table-column label="动作">
               <template #default="{ row }">
                 <el-popover 
                   placement="right" 
@@ -489,19 +487,19 @@
                 </el-popover>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('storyboard.table.duration')" width="80">
+            <el-table-column label="时长" width="80">
               <template #default="{ row }">
                 {{ row.duration || '-' }}秒
               </template>
             </el-table-column>
-            <el-table-column :label="$t('storyboard.table.operations')" width="100" fixed="right">
+            <el-table-column label="操作" width="100" fixed="right">
               <template #default="{ row, $index }">
                 <el-button 
                   type="primary" 
                   size="small"
                   @click="editShot(row, $index)"
                 >
-                  {{ $t('common.edit') }}
+                  编辑
                 </el-button>
               </template>
             </el-table-column>
@@ -510,20 +508,20 @@
           <div class="action-buttons" style="margin-top: 24px;">
             <el-button size="large" @click="prevStep">
               <el-icon><ArrowLeft /></el-icon>
-              {{ $t('workflow.prevStep') }}
+              上一步
             </el-button>
             <el-button 
               @click="regenerateShots"
               :icon="MagicStick"
             >
-              {{ $t('workflow.reSplitShots') }}
+              重新拆分分镜
             </el-button>
             <el-button 
               type="success"
               size="large"
               @click="goToProfessionalUI"
             >
-              {{ $t('workflow.enterProfessional') }}
+              进入专业制作
               <el-icon><ArrowRight /></el-icon>
             </el-button>
           </div>
@@ -531,14 +529,14 @@
         
         <!-- 未拆分时显示 -->
         <div v-else class="empty-shots">
-          <el-empty :description="$t('workflow.splitStoryboardFirst')">
+          <el-empty description="请先对章节进行分镜拆解">
             <el-button 
               type="primary" 
               @click="generateShots"
               :loading="generatingShots"
               :icon="MagicStick"
             >
-              {{ generatingShots ? $t('workflow.aiSplitting') : $t('workflow.aiAutoSplit') }}
+              {{ generatingShots ? 'AI拆分中...' : 'AI自动拆分' }}
             </el-button>
             
             <!-- 任务进度显示 -->
@@ -562,44 +560,44 @@
     <!-- 镜头编辑对话框 -->
     <el-dialog 
       v-model="shotEditDialogVisible" 
-:title="$t('workflow.editShot')" 
+      title="编辑镜头" 
       width="800px"
       :close-on-click-modal="false"
     >
       <el-form v-if="editingShot" label-width="100px" size="default">
-        <el-form-item :label="$t('workflow.shotTitle')">
-          <el-input v-model="editingShot.title" :placeholder="$t('workflow.shotTitlePlaceholder')" />
+        <el-form-item label="镜头标题">
+          <el-input v-model="editingShot.title" placeholder="请输入镜头标题" />
         </el-form-item>
         
         <el-row :gutter="16">
           <el-col :span="8">
-            <el-form-item :label="$t('workflow.shotType')">
-              <el-select v-model="editingShot.shot_type" :placeholder="$t('workflow.selectShotType')">
-                <el-option :label="$t('workflow.longShot')" value="远景" />
-                <el-option :label="$t('workflow.fullShot')" value="全景" />
-                <el-option :label="$t('workflow.mediumShot')" value="中景" />
-                <el-option :label="$t('workflow.closeUp')" value="近景" />
-                <el-option :label="$t('workflow.extremeCloseUp')" value="特写" />
+            <el-form-item label="镜头类型">
+              <el-select v-model="editingShot.shot_type" placeholder="请选择镜头类型">
+                <el-option label="远景" value="远景" />
+                <el-option label="全景" value="全景" />
+                <el-option label="中景" value="中景" />
+                <el-option label="近景" value="近景" />
+                <el-option label="特写" value="特写" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item :label="$t('workflow.cameraAngle')">
-              <el-select v-model="editingShot.angle" :placeholder="$t('workflow.selectAngle')">
-                <el-option :label="$t('workflow.eyeLevel')" value="平视" />
-                <el-option :label="$t('workflow.lowAngle')" value="仰视" />
-                <el-option :label="$t('workflow.highAngle')" value="俯视" />
-                <el-option :label="$t('workflow.sideView')" value="侧面" />
+            <el-form-item label="镜头角度">
+              <el-select v-model="editingShot.angle" placeholder="请选择镜头角度">
+                <el-option label="平视" value="平视" />
+                <el-option label="仰视" value="仰视" />
+                <el-option label="俯视" value="俯视" />
+                <el-option label="侧面" value="侧面" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item :label="$t('workflow.cameraMovement')">
-              <el-select v-model="editingShot.movement" :placeholder="$t('workflow.selectMovement')">
-                <el-option :label="$t('workflow.staticShot')" value="固定镜头" />
-                <el-option :label="$t('workflow.pushIn')" value="推镜" />
-                <el-option :label="$t('workflow.pullOut')" value="拉镜" />
-                <el-option :label="$t('workflow.followShot')" value="跟镜" />
+            <el-form-item label="镜头运动">
+              <el-select v-model="editingShot.movement" placeholder="请选择镜头运动">
+                <el-option label="固定镜头" value="固定镜头" />
+                <el-option label="推镜" value="推镜" />
+                <el-option label="拉镜" value="拉镜" />
+                <el-option label="跟镜" value="跟镜" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -607,98 +605,98 @@
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item :label="$t('workflow.location')">
-              <el-input v-model="editingShot.location" :placeholder="$t('workflow.locationPlaceholder')" />
+            <el-form-item label="拍摄地点">
+              <el-input v-model="editingShot.location" placeholder="请输入拍摄地点" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item :label="$t('workflow.time')">
-              <el-input v-model="editingShot.time" :placeholder="$t('workflow.timeSetting')" />
+            <el-form-item label="时间">
+              <el-input v-model="editingShot.time" placeholder="请输入时间" />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-form-item :label="$t('workflow.shotDescription')">
-          <el-input v-model="editingShot.description" type="textarea" :rows="2" :placeholder="$t('workflow.shotDescriptionPlaceholder')" />
+        <el-form-item label="镜头描述">
+          <el-input v-model="editingShot.description" type="textarea" :rows="2" placeholder="请输入镜头描述" />
         </el-form-item>
 
-        <el-form-item :label="$t('workflow.actionDescription')">
-          <el-input v-model="editingShot.action" type="textarea" :rows="3" :placeholder="$t('workflow.detailedAction')" />
+        <el-form-item label="动作描述">
+          <el-input v-model="editingShot.action" type="textarea" :rows="3" placeholder="请输入详细动作描述" />
         </el-form-item>
 
-        <el-form-item :label="$t('workflow.dialogue')">
-          <el-input v-model="editingShot.dialogue" type="textarea" :rows="2" :placeholder="$t('workflow.characterDialogue')" />
+        <el-form-item label="对白">
+          <el-input v-model="editingShot.dialogue" type="textarea" :rows="2" placeholder="请输入角色对白" />
         </el-form-item>
 
-        <el-form-item :label="$t('workflow.result')">
-          <el-input v-model="editingShot.result" type="textarea" :rows="2" :placeholder="$t('workflow.actionResult')" />
+        <el-form-item label="结果">
+          <el-input v-model="editingShot.result" type="textarea" :rows="2" placeholder="请输入动作结果" />
         </el-form-item>
 
-        <el-form-item :label="$t('workflow.atmosphere')">
-          <el-input v-model="editingShot.atmosphere" type="textarea" :rows="2" :placeholder="$t('workflow.atmosphereDescription')" />
+        <el-form-item label="氛围">
+          <el-input v-model="editingShot.atmosphere" type="textarea" :rows="2" placeholder="请输入氛围描述" />
         </el-form-item>
 
-        <el-form-item :label="$t('workflow.imagePrompt')">
-          <el-input v-model="editingShot.image_prompt" type="textarea" :rows="3" :placeholder="$t('workflow.imagePromptPlaceholder')" />
+        <el-form-item label="图片提示词">
+          <el-input v-model="editingShot.image_prompt" type="textarea" :rows="3" placeholder="请输入图片提示词" />
         </el-form-item>
 
-        <el-form-item :label="$t('workflow.videoPrompt')">
-          <el-input v-model="editingShot.video_prompt" type="textarea" :rows="3" :placeholder="$t('workflow.videoPromptPlaceholder')" />
+        <el-form-item label="视频提示词">
+          <el-input v-model="editingShot.video_prompt" type="textarea" :rows="3" placeholder="请输入视频提示词" />
         </el-form-item>
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item :label="$t('workflow.bgmHint')">
-              <el-input v-model="editingShot.bgm_prompt" :placeholder="$t('workflow.bgmAtmosphere')" />
+            <el-form-item label="背景音乐提示词">
+              <el-input v-model="editingShot.bgm_prompt" placeholder="请输入背景音乐提示词" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item :label="$t('workflow.soundEffect')">
-              <el-input v-model="editingShot.sound_effect" :placeholder="$t('workflow.soundEffectDescription')" />
+            <el-form-item label="音效提示词">
+              <el-input v-model="editingShot.sound_effect" placeholder="请输入音效提示词" />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-form-item :label="$t('workflow.durationSeconds')">
+        <el-form-item label="时长（秒）">
           <el-input-number v-model="editingShot.duration" :min="1" :max="60" />
         </el-form-item>
       </el-form>
 
       <template #footer>
-        <el-button @click="shotEditDialogVisible = false">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="saveShotEdit" :loading="savingShot">{{ $t('common.save') }}</el-button>
+        <el-button @click="shotEditDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveShotEdit" :loading="savingShot">保存</el-button>
       </template>
     </el-dialog>
 
     <!-- 提示词编辑对话框 -->
     <el-dialog 
       v-model="promptDialogVisible" 
-:title="$t('workflow.editPrompt')" 
+      title="修改提示词" 
       width="600px"
     >
       <el-form label-width="80px">
-        <el-form-item :label="$t('common.name')">
+        <el-form-item label="名称">
           <el-input v-model="currentEditItem.name" disabled />
         </el-form-item>
-        <el-form-item :label="$t('workflow.imagePrompt')">
+        <el-form-item label="图片提示词">
           <el-input
             v-model="editPrompt"
             type="textarea"
             :rows="6"
-            :placeholder="$t('workflow.imagePromptPlaceholder')"
+            placeholder="请输入图片提示词"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="promptDialogVisible = false">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="savePrompt">{{ $t('common.saveAndGenerate') }}</el-button>
+        <el-button @click="promptDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="savePrompt">保存并生成</el-button>
       </template>
     </el-dialog>
 
     <!-- 角色库选择对话框 -->
     <el-dialog 
       v-model="libraryDialogVisible" 
-:title="$t('workflow.selectFromLibrary')" 
+      title="从角色库选择" 
       width="800px"
     >
       <div class="library-grid">
@@ -713,20 +711,20 @@
         </div>
       </div>
       <div v-if="libraryItems.length === 0" class="empty-library">
-        <el-empty :description="$t('workflow.emptyLibrary')" />
+        <el-empty description="角色库为空" />
       </div>
     </el-dialog>
 
     <!-- AI模型配置对话框 -->
     <el-dialog 
       v-model="modelConfigDialogVisible" 
-:title="$t('workflow.aiModelConfig')" 
+      title="AI模型配置" 
       width="600px"
       :close-on-click-modal="false"
     >
       <el-form label-width="120px">
-        <el-form-item :label="$t('workflow.textGenModel')">
-          <el-select v-model="selectedTextModel" :placeholder="$t('workflow.selectTextModel')" style="width: 100%">
+        <el-form-item label="文本生成模型">
+          <el-select v-model="selectedTextModel" placeholder="请选择文本生成模型" style="width: 100%">
             <el-option 
               v-for="model in textModels" 
               :key="model.modelName" 
@@ -735,12 +733,12 @@
             />
           </el-select>
           <div class="model-tip">
-            {{ $t('workflow.textModelTip') }}
+            用于生成章节内容、角色、场景等文本
           </div>
         </el-form-item>
 
-        <el-form-item :label="$t('workflow.imageGenModel')">
-          <el-select v-model="selectedImageModel" :placeholder="$t('workflow.selectImageModel')" style="width: 100%">
+        <el-form-item label="图片生成模型">
+          <el-select v-model="selectedImageModel" placeholder="请选择图片生成模型" style="width: 100%">
             <el-option 
               v-for="model in imageModels" 
               :key="model.modelName" 
@@ -749,21 +747,21 @@
             />
           </el-select>
           <div class="model-tip">
-            {{ $t('workflow.modelConfigTip') }}
+            用于生成角色和场景图片
           </div>
         </el-form-item>
       </el-form>
 
       <template #footer>
-        <el-button @click="modelConfigDialogVisible = false">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="saveModelConfig">{{ $t('common.saveConfig') }}</el-button>
+        <el-button @click="modelConfigDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveModelConfig">保存配置</el-button>
       </template>
     </el-dialog>
 
     <!-- 图片上传对话框 -->
     <el-dialog 
       v-model="uploadDialogVisible" 
-:title="$t('tooltip.uploadImage')" 
+      title="上传图片" 
       width="500px"
     >
       <el-upload
@@ -778,11 +776,11 @@
       >
         <el-icon class="el-icon--upload"><Upload /></el-icon>
         <div class="el-upload__text">
-          {{ $t('workflow.dragFilesHere') }}<em>{{ $t('workflow.clickToUpload') }}</em>
+          将文件拖到此处，或<em>点击上传</em>
         </div>
         <template #tip>
           <div class="el-upload__tip">
-            {{ $t('workflow.uploadFormatTip') }}
+            支持 jpg/png 格式，文件大小不超过 10MB
           </div>
         </template>
       </el-upload>
@@ -1026,7 +1024,7 @@ const showModelConfigDialog = () => {
 // 保存模型配置
 const saveModelConfig = () => {
   if (!selectedTextModel.value || !selectedImageModel.value) {
-    ElMessage.warning($t('workflow.pleaseSelectModels'))
+    ElMessage.warning('请选择文本生成模型和图片生成模型')
     return
   }
   
@@ -1034,7 +1032,7 @@ const saveModelConfig = () => {
   localStorage.setItem(`ai_text_model_${dramaId}`, selectedTextModel.value)
   localStorage.setItem(`ai_image_model_${dramaId}`, selectedImageModel.value)
   
-  ElMessage.success($t('workflow.modelConfigSaved'))
+  ElMessage.success('模型配置已保存')
   modelConfigDialogVisible.value = false
 }
 
@@ -1187,16 +1185,17 @@ const editCurrentEpisodeScript = () => {
   scriptContent.value = currentEpisode.value?.script_content || ''
 }
 
+// 处理提取角色和场景
 const handleExtractCharactersAndBackgrounds = async () => {
   // 如果已经提取过，显示确认对话框
   if (hasExtractedData.value) {
     try {
       await ElMessageBox.confirm(
-        $t('workflow.reExtractConfirmMessage'),
-        $t('workflow.reExtractConfirmTitle'),
+        '重新提取将覆盖已提取的角色和场景（包括已生成的图片），确定继续吗？',
+        '重新提取角色和场景',
         {
-          confirmButtonText: $t('common.confirm'),
-          cancelButtonText: $t('common.cancel'),
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
           type: 'warning',
           distinguishCancelAndClose: true
         }
@@ -1209,7 +1208,7 @@ const handleExtractCharactersAndBackgrounds = async () => {
   
   // 显示即将开始的提示
   if (hasExtractedData.value) {
-    ElMessage.info($t('workflow.startReExtracting'))
+    ElMessage.info('开始重新提取角色和场景')
   }
   
   await extractCharactersAndBackgrounds()
@@ -1398,10 +1397,10 @@ const batchGenerateCharacterImages = async () => {
       model
     )
     
-    ElMessage.success($t('workflow.batchTaskSubmitted'))
+    ElMessage.success('批量任务已提交')
     await loadDramaData()
   } catch (error: any) {
-    ElMessage.error(error.message || $t('workflow.batchGenerateFailed'))
+    ElMessage.error(error.message || '批量生成失败')
   } finally {
     batchGeneratingCharacters.value = false
   }
@@ -1420,14 +1419,14 @@ const generateSceneImage = async (sceneId: string) => {
     const imageGenId = response.image_generation?.id
     
     if (imageGenId) {
-      ElMessage.info($t('workflow.sceneImageGenerating'))
+      ElMessage.info('场景图片生成中，请稍候...')
       // 轮询检查生成状态
       await pollImageStatus(imageGenId, async () => {
         await loadDramaData()
-        ElMessage.success($t('workflow.sceneImageComplete'))
+        ElMessage.success('场景图片生成完成！')
       })
     } else {
-      ElMessage.success($t('workflow.sceneImageStarted'))
+      ElMessage.success('场景图片生成已启动')
       await loadDramaData()
     }
   } catch (error: any) {
@@ -1454,12 +1453,12 @@ const batchGenerateSceneImages = async () => {
     const failCount = results.filter(r => r.status === 'rejected').length
     
     if (failCount === 0) {
-      ElMessage.success($t('workflow.batchCompleteSuccess', { count: successCount }))
+      ElMessage.success(`批量生成完成，成功 ${successCount} 个`)
     } else {
-      ElMessage.warning($t('workflow.batchCompletePartial', { success: successCount, fail: failCount }))
+      ElMessage.warning(`批量生成部分完成，成功 ${successCount} 个，失败 ${failCount} 个`)
     }
   } catch (error: any) {
-    ElMessage.error(error.message || $t('workflow.batchGenerateFailed'))
+    ElMessage.error(error.message || '批量生成失败')
   } finally {
     batchGeneratingScenes.value = false
   }
@@ -1502,7 +1501,7 @@ const generateShots = async () => {
     await pollTaskStatus(response.task_id)
     
   } catch (error: any) {
-    ElMessage.error(error.message || '拆分失败')
+    ElMessage.error(error.message || '分镜拆分失败')
     generatingShots.value = false
   }
 }
@@ -1523,7 +1522,7 @@ const pollTaskStatus = async (taskId: string) => {
         }
         generatingShots.value = false
         
-        ElMessage.success($t('workflow.splitSuccess'))
+        ElMessage.success('分镜拆分成功！正在进入专业制作界面...')
         
         // 跳转到专业编辑器页面
         router.push({
@@ -1561,7 +1560,7 @@ const pollTaskStatus = async (taskId: string) => {
 }
 
 const regenerateShots = async () => {
-  await ElMessageBox.confirm($t('workflow.reSplitConfirm'), $t('common.tip'), {
+  await ElMessageBox.confirm('确定要重新拂分分镜吗？', '提示', {
     type: 'warning'
   })
   
@@ -1669,32 +1668,32 @@ const selectFromLibrary = async (characterId: number) => {
     currentUploadTarget.value = characterId
     libraryDialogVisible.value = true
   } catch (error: any) {
-    ElMessage.error(error.message || $t('workflow.loadLibraryFailed'))
+    ElMessage.error(error.message || '获取角色库失败')
   }
 }
 
 const addToCharacterLibrary = async (character: any) => {
   if (!character.image_url) {
-    ElMessage.warning($t('workflow.generateImageFirst'))
+    ElMessage.warning('请先生成角色形象')
     return
   }
   
   try {
     await ElMessageBox.confirm(
-      $t('workflow.addToLibraryConfirm', { name: character.name }),
-      $t('workflow.addToLibrary'),
+      `确定要将角色 "${character.name}" 添加到角色库吗？`,
+      '添加到角色库',
       {
-        confirmButtonText: $t('common.confirm'),
-        cancelButtonText: $t('common.cancel'),
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
         type: 'info'
       }
     )
     
     await characterLibraryAPI.addCharacterToLibrary(character.id.toString())
-    ElMessage.success($t('workflow.addedToLibrary'))
+    ElMessage.success('已添加到角色库')
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.message || $t('workflow.addFailed'))
+      ElMessage.error(error.message || '添加失败')
     }
   }
 }
@@ -2071,6 +2070,7 @@ onMounted(() => {
         font-size: 16px;
         font-weight: 600;
         color: var(--text-primary);
+        white-space: nowrap; 
 
         .el-icon {
           color: var(--accent);
@@ -2080,6 +2080,7 @@ onMounted(() => {
 
       .el-alert {
         border-radius: 4px;
+        flex-shrink: 0;
       }
     }
 

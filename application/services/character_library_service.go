@@ -522,9 +522,12 @@ func (s *CharacterLibraryService) processCharacterExtraction(taskID string, epis
 		script = *episode.ScriptContent
 	}
 
+	// 获取角色提取提示词
 	prompt := s.promptI18n.GetCharacterExtractionPrompt()
+	// 构建用户输入提示词
 	userPrompt := fmt.Sprintf("【剧本内容】\n%s", script)
 
+	// 调用AI服务生成角色数据
 	response, err := s.aiService.GenerateText(userPrompt, prompt, ai.WithMaxTokens(3000))
 	if err != nil {
 		_ = s.taskService.UpdateTaskError(taskID, err)

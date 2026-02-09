@@ -54,14 +54,14 @@ func (s *ScriptGenerationService) GenerateCharacters(req *GenerateCharactersRequ
 	}
 	task, err := s.taskService.CreateTask("character_generation", taskParams)
 	if err != nil {
-		s.log.Errorw("Failed to create character generation task", "error", err)
+		s.log.Errorw("创建角色生成任务失败", "error", err)
 		return "", fmt.Errorf("创建任务失败: %w", err)
 	}
 
 	// 异步处理角色生成
 	go s.processCharacterGeneration(task.ID, req)
 
-	s.log.Infow("Character generation task created", "task_id", task.ID, "drama_id", req.DramaID)
+	s.log.Infow("角色生成任务已创建", "task_id", task.ID, "drama_id", req.DramaID)
 	return task.ID, nil
 }
 
@@ -79,6 +79,7 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 		count = 5
 	}
 
+	// 获取角色生成的系统提示语
 	systemPrompt := s.promptI18n.GetCharacterExtractionPrompt()
 
 	// 生成角色时输入的描述信息
@@ -94,6 +95,7 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 		outlineText = s.promptI18n.FormatUserPrompt("drama_info_template", drama.Title, drama.Description, drama.Genre)
 	}
 
+	// 构建用户提示词
 	userPrompt := s.promptI18n.FormatUserPrompt("character_request", outlineText, count)
 
 	temperature := req.Temperature
@@ -104,12 +106,13 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 	// 如果指定了模型，使用指定的模型；否则使用默认配置
 	var text string
 	if req.Model != "" {
-		s.log.Infow("Using specified model for character generation", "model", req.Model, "task_id", taskID)
+		s.log.Infow("使用指定模型生成角色", "使用模型", req.Model, "task_id", taskID)
 		client, getErr := s.aiService.GetAIClientForModel("text", req.Model)
 		if getErr != nil {
-			s.log.Warnw("Failed to get client for specified model, using default", "model", req.Model, "error", getErr, "task_id", taskID)
+			s.log.Warnw("获取指定模型客户端失败，使用默认模型", "使用模型: ", req.Model, "错误信息", getErr, "task_id", taskID)
 			text, err = s.aiService.GenerateText(userPrompt, systemPrompt, ai.WithTemperature(temperature))
 		} else {
+			// 使用指定模型生成文本
 			text, err = client.GenerateText(userPrompt, systemPrompt, ai.WithTemperature(temperature))
 		}
 	} else {
@@ -123,7 +126,7 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 		return
 	}
 
-	s.log.Infow("AI response received for character generation", "length", len(text), "preview", text[:minInt(200, len(text))], "task_id", taskID)
+	s.log.Infow("AI角色生成已收到回复", "length", len(text), "preview", text[:minInt(200, len(text))], "task_id", taskID)
 
 	// AI直接返回数组格式
 	var result []struct {
@@ -136,7 +139,7 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 	}
 
 	if err := utils.SafeParseAIJSON(text, &result); err != nil {
-		s.log.Errorw("Failed to parse characters JSON", "error", err, "raw_response", text[:minInt(500, len(text))], "task_id", taskID)
+		s.log.Errorw("解析角色JSON失败", "error", err, "raw_response", text[:minInt(500, len(text))], "task_id", taskID)
 		s.taskService.UpdateTaskStatus(taskID, "failed", 0, "解析AI返回结果失败")
 		return
 	}
@@ -148,7 +151,7 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 		err := s.db.Where("drama_id = ? AND name = ?", req.DramaID, char.Name).First(&existingChar).Error
 		if err == nil {
 			// 角色已存在，直接使用已存在的角色，不覆盖
-			s.log.Infow("Character already exists, skipping", "drama_id", req.DramaID, "name", char.Name, "task_id", taskID)
+			s.log.Infow("角色已存在，跳过", "drama_id", req.DramaID, "name", char.Name, "task_id", taskID)
 			characters = append(characters, existingChar)
 			continue
 		}
@@ -166,7 +169,7 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 		}
 
 		if err := s.db.Create(&character).Error; err != nil {
-			s.log.Errorw("Failed to create character", "error", err, "task_id", taskID)
+			s.log.Errorw("创建角色失败", "error", err, "task_id", taskID)
 			continue
 		}
 
@@ -179,23 +182,23 @@ func (s *ScriptGenerationService) processCharacterGeneration(taskID string, req 
 		if err := s.db.First(&episode, req.EpisodeID).Error; err == nil {
 			// 使用 GORM 的 Association 建立多对多关联
 			if err := s.db.Model(&episode).Association("Characters").Append(characters); err != nil {
-				s.log.Errorw("Failed to associate characters with episode", "error", err, "episode_id", req.EpisodeID, "task_id", taskID)
+				s.log.Errorw("角色与剧集关联失败", "error", err, "episode_id", req.EpisodeID, "task_id", taskID)
 			} else {
-				s.log.Infow("Characters associated with episode", "episode_id", req.EpisodeID, "character_count", len(characters), "task_id", taskID)
+				s.log.Infow("角色已与剧集关联", "episode_id", req.EpisodeID, "character_count", len(characters), "task_id", taskID)
 			}
 		} else {
-			s.log.Errorw("Episode not found for association", "episode_id", req.EpisodeID, "error", err, "task_id", taskID)
+			s.log.Errorw("未找到用于关联的剧集", "episode_id", req.EpisodeID, "error", err, "task_id", taskID)
 		}
 	}
 
 	// 更新任务状态为完成
-	resultData := map[string]interface{}{
+	resultData := map[string]any{
 		"characters": characters,
 		"count":      len(characters),
 	}
 	s.taskService.UpdateTaskResult(taskID, resultData)
 
-	s.log.Infow("Character generation completed", "task_id", taskID, "drama_id", req.DramaID, "character_count", len(characters))
+	s.log.Infow("角色生成完成", "task_id", taskID, "drama_id", req.DramaID, "character_count", len(characters))
 }
 
 // GenerateScenesForEpisode 已废弃，使用 StoryboardService.GenerateStoryboard 替代

@@ -31,8 +31,39 @@ func NewVolcengineClient(baseURL, apiKey, model string) *VolcengineClient {
 	}
 }
 
+// GenerateText 使用火山引擎生成文本
+// prompt: 用户输入的提示语
+// systemPrompt: 系统提示语
+// options: 可选参数，如最大 token 数等
 func (c *VolcengineClient) GenerateText(prompt string, systemPrompt string, options ...func(*ChatCompletionRequest)) (string, error) {
-	return "", nil
+	messages := []*model.ChatCompletionMessage{}
+	// 如果有系统提示语，先添加系统消息
+	if systemPrompt != "" {
+		messages = append(messages, &model.ChatCompletionMessage{
+			Role: model.ChatMessageRoleSystem,
+			Content: &model.ChatCompletionMessageContent{
+				StringValue: volcengine.String(systemPrompt),
+			},
+		})
+	}
+	// 添加用户输入的提示语
+	messages = append(messages, &model.ChatCompletionMessage{
+		Role: model.ChatMessageRoleUser,
+		Content: &model.ChatCompletionMessageContent{
+			StringValue: volcengine.String(prompt),
+		},
+	})
+	// 调用 ChatCompletion 接口
+	resp, err := c.ChatCompletion(messages, options...)
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("no response from API")
+	}
+
+	return *resp.Choices[0].Message.Content.StringValue, nil
 }
 
 func (c *VolcengineClient) GenerateImage(prompt string, size string, n int) ([]string, error) {
