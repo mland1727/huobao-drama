@@ -15,7 +15,11 @@ func (h *CharacterLibraryHandler) GenerateCharacterImage(c *gin.Context) {
 		Model string `json:"model"`
 		Style string `json:"style"`
 	}
-	c.ShouldBindJSON(&req)
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		response.NotFound(c, "传入的数据有误")
+		return
+	}
 
 	imageGen, err := h.libraryService.GenerateCharacterImage(characterID, h.imageService, req.Model, req.Style)
 	if err != nil {

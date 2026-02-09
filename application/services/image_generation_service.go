@@ -92,6 +92,7 @@ type GenerateImageRequest struct {
 	ReferenceImages []string `json:"reference_images"` // 参考图片URL列表
 }
 
+// GenerateImage 生成图片
 func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*models.ImageGeneration, error) {
 	var drama models.Drama
 	if err := s.db.Where("id = ? ", request.DramaID).First(&drama).Error; err != nil {
@@ -99,9 +100,10 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 	}
 	// 注意：SceneID可能指向Scene或Storyboard表，调用方已经做过权限验证，这里不再重复验证
 
+	// 厂商
 	provider := request.Provider
 	if provider == "" {
-		provider = "openai"
+		provider = "vidu"
 	}
 
 	// 序列化参考图片
@@ -122,6 +124,11 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 		imageType = string(models.ImageTypeStoryboard)
 	}
 
+	requestModel := request.Model
+	if requestModel == "" {
+		requestModel = "viduq2"
+	}
+
 	imageGen := &models.ImageGeneration{
 		StoryboardID:    request.StoryboardID,
 		DramaID:         uint(dramaIDParsed),
@@ -133,7 +140,7 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 		Provider:        provider,
 		Prompt:          request.Prompt,
 		NegPrompt:       request.NegativePrompt,
-		Model:           request.Model,
+		Model:           requestModel,
 		Size:            request.Size,
 		ReferenceImages: referenceImagesJSON,
 		Quality:         request.Quality,
@@ -156,18 +163,19 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 	return imageGen, nil
 }
 
+// 。ProcessImageGeneration 处理图片生成任务
 func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	var imageGen models.ImageGeneration
 	imageRatio := s.config.Style.DefaultImageRatio
 	if err := s.db.First(&imageGen, imageGenID).Error; err != nil {
-		s.log.Errorw("Failed to load image generation", "error", err, "id", imageGenID)
+		s.log.Errorw("加载图片生成任务失败", "error", err, "id", imageGenID)
 		return
 	}
 
 	// 获取drama的style信息
 	var drama models.Drama
 	if err := s.db.First(&drama, imageGen.DramaID).Error; err != nil {
-		s.log.Warnw("Failed to load drama for style", "error", err, "drama_id", imageGen.DramaID)
+		s.log.Warnw("加载剧本风格信息失败", "error", err, "drama_id", imageGen.DramaID)
 	}
 
 	s.db.Model(&imageGen).Update("status", models.ImageStatusProcessing)
@@ -175,15 +183,15 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	// 如果关联了background，同步更新background为generating状态
 	if imageGen.StoryboardID != nil {
 		if err := s.db.Model(&models.Scene{}).Where("id = ?", *imageGen.StoryboardID).Update("status", "generating").Error; err != nil {
-			s.log.Warnw("Failed to update background status to generating", "scene_id", *imageGen.StoryboardID, "error", err)
+			s.log.Warnw("更新背景状态为生成中失败", "scene_id", *imageGen.StoryboardID, "error", err)
 		} else {
-			s.log.Infow("Background status updated to generating", "scene_id", *imageGen.StoryboardID)
+			s.log.Infow("背景状态已更新为生成中", "scene_id", *imageGen.StoryboardID)
 		}
 	}
 
 	client, err := s.getImageClientWithModel(imageGen.Provider, imageGen.Model)
 	if err != nil {
-		s.log.Errorw("Failed to get image client", "error", err, "provider", imageGen.Provider, "model", imageGen.Model)
+		s.log.Errorw("获取图片客户端失败", "error", err, "provider", imageGen.Provider, "model", imageGen.Model)
 		s.updateImageGenError(imageGenID, err.Error())
 		return
 	}
@@ -192,7 +200,7 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	var referenceImagePaths []string
 	if len(imageGen.ReferenceImages) > 0 {
 		if err := json.Unmarshal(imageGen.ReferenceImages, &referenceImagePaths); err == nil {
-			s.log.Infow("Using reference images for generation",
+			s.log.Infow("使用参考图片进行生成",
 				"id", imageGenID,
 				"reference_count", len(referenceImagePaths),
 				"references", referenceImagePaths)
@@ -215,20 +223,20 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 			// 视为本地路径，转换为 base64
 			base64Image, err := s.loadImageAsBase64(imgPath)
 			if err != nil {
-				s.log.Warnw("Failed to load local image as base64",
+				s.log.Warnw("加载本地图片为base64失败",
 					"error", err,
 					"id", imageGenID,
 					"local_path", imgPath)
 			} else {
 				referenceImages = append(referenceImages, base64Image)
-				s.log.Infow("Loaded local image for generation",
+				s.log.Infow("加载本地图片用于生成",
 					"id", imageGenID,
 					"local_path", imgPath)
 			}
 		}
 	}
 
-	s.log.Infow("Starting image generation", "id", imageGenID, "prompt", imageGen.Prompt, "provider", imageGen.Provider)
+	s.log.Infow("开始图片生成", "id", imageGenID, "prompt", imageGen.Prompt, "provider", imageGen.Provider)
 
 	var opts []image.ImageOption
 	if imageGen.NegPrompt != nil && *imageGen.NegPrompt != "" {
@@ -272,7 +280,7 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 		if stylePrompt != "" {
 			// 将风格提示词作为系统级约束添加到提示词前面
 			prompt = stylePrompt + "\n\n" + prompt
-			s.log.Infow("Added style prompt to image generation",
+			s.log.Infow("已添加风格提示词到图片生成",
 				"id", imageGenID,
 				"style", drama.Style,
 				"style_prompt_length", len(stylePrompt))
@@ -282,12 +290,12 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	prompt += ", imageRatio:" + imageRatio
 	result, err := client.GenerateImage(prompt, opts...)
 	if err != nil {
-		s.log.Errorw("Image generation API call failed", "error", err, "id", imageGenID, "prompt", imageGen.Prompt)
+		s.log.Errorw("图片生成API调用失败", "error", err, "id", imageGenID, "prompt", imageGen.Prompt)
 		s.updateImageGenError(imageGenID, err.Error())
 		return
 	}
 
-	s.log.Infow("Image generation API call completed", "id", imageGenID, "completed", result.Completed, "has_url", result.ImageURL != "")
+	s.log.Infow("图片生成API调用完成", "id", imageGenID, "completed", result.Completed, "has_url", result.ImageURL != "")
 
 	if !result.Completed {
 		s.db.Model(&imageGen).Updates(map[string]interface{}{
@@ -536,6 +544,7 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 			}
 		}
 	} else {
+		// 使用默认配置
 		config, err = s.aiService.GetDefaultConfig("image")
 		if err != nil {
 			return nil, fmt.Errorf("no image AI config found: %w", err)
@@ -572,6 +581,9 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 	case "gemini", "google":
 		endpoint = "/v1beta/models/{model}:generateContent"
 		return image.NewGeminiImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+	case "vidu":
+		endpoint = "/reference2image"
+		return image.NewViduImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
 	default:
 		endpoint = "/images/generations"
 		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil

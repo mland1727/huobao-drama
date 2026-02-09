@@ -346,6 +346,7 @@ func (s *AIService) TestConnection(req *TestConnectionRequest) error {
 	return err
 }
 
+// 。GetDefaultConfig 获取指定服务类型的默认激活配置
 func (s *AIService) GetDefaultConfig(serviceType string) (*models.AIServiceConfig, error) {
 	var config models.AIServiceConfig
 	// 按优先级降序获取第一个激活的配置

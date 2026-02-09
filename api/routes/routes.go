@@ -107,7 +107,7 @@ func SetupRouter(cfg *config.Config, db *gorm.DB, log *logger.Logger, localStora
 			characters.PUT("/:id", characterLibraryHandler.UpdateCharacter)
 			characters.DELETE("/:id", characterLibraryHandler.DeleteCharacter)
 			characters.POST("/batch-generate-images", characterLibraryHandler.BatchGenerateCharacterImages)
-			characters.POST("/:id/generate-image", characterLibraryHandler.GenerateCharacterImage)
+			characters.POST("/:id/generate-image", characterLibraryHandler.GenerateCharacterImage) // 生成角色图片
 			characters.POST("/:id/upload-image", uploadHandler.UploadCharacterImage)
 			characters.PUT("/:id/image", characterLibraryHandler.UploadCharacterImage)
 			characters.PUT("/:id/image-from-library", characterLibraryHandler.ApplyLibraryItemToCharacter)

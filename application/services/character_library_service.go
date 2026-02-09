@@ -352,6 +352,7 @@ func (s *CharacterLibraryService) GenerateCharacterImage(characterID string, ima
 		Quality:     "standard",
 	}
 
+	// 生成图片
 	imageGen, err := imageService.GenerateImage(req)
 	if err != nil {
 		s.log.Errorw("Failed to generate character image", "error", err)
