@@ -178,6 +178,7 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 		s.log.Warnw("加载剧本风格信息失败", "error", err, "drama_id", imageGen.DramaID)
 	}
 
+	// 将状态更新为processing
 	s.db.Model(&imageGen).Update("status", models.ImageStatusProcessing)
 
 	// 如果关联了background，同步更新background为generating状态
@@ -189,6 +190,7 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 		}
 	}
 
+	// 根据模型名称获取图片生成客户端
 	client, err := s.getImageClientWithModel(imageGen.Provider, imageGen.Model)
 	if err != nil {
 		s.log.Errorw("获取图片客户端失败", "error", err, "provider", imageGen.Provider, "model", imageGen.Model)
@@ -200,10 +202,7 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	var referenceImagePaths []string
 	if len(imageGen.ReferenceImages) > 0 {
 		if err := json.Unmarshal(imageGen.ReferenceImages, &referenceImagePaths); err == nil {
-			s.log.Infow("使用参考图片进行生成",
-				"id", imageGenID,
-				"reference_count", len(referenceImagePaths),
-				"references", referenceImagePaths)
+			s.log.Infow("使用参考图片进行生成", "id", imageGenID, "reference_count", len(referenceImagePaths), "references", referenceImagePaths)
 		}
 	}
 
@@ -211,6 +210,9 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	if imageGen.LocalPath != nil && *imageGen.LocalPath != "" {
 		referenceImagePaths = append([]string{*imageGen.LocalPath}, referenceImagePaths...)
 	}
+
+	// 打印 referenceImagePaths
+	s.log.Infow("当前的参考图片路径列表", "id", imageGenID, "reference_image_paths", referenceImagePaths)
 
 	// 将所有参考图片路径转换为 base64（如果是本地路径）或保持原样（如果是 URL）
 	var referenceImages []string
@@ -297,6 +299,7 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 
 	s.log.Infow("图片生成API调用完成", "id", imageGenID, "completed", result.Completed, "has_url", result.ImageURL != "")
 
+	// 没有完成且没有错误，说明是异步生成，记录task_id并开始轮询
 	if !result.Completed {
 		s.db.Model(&imageGen).Updates(map[string]interface{}{
 			"status":  models.ImageStatusProcessing,
@@ -309,11 +312,13 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 	s.completeImageGeneration(imageGenID, result)
 }
 
+// pollTaskStatus 轮询图片生成任务状态
 func (s *ImageGenerationService) pollTaskStatus(imageGenID uint, client image.ImageClient, taskID string) {
+	// 最多轮询60次，每次间隔5秒
 	maxAttempts := 60
 	pollInterval := 5 * time.Second
 
-	for i := 0; i < maxAttempts; i++ {
+	for range maxAttempts {
 		time.Sleep(pollInterval)
 
 		result, err := client.GetTaskStatus(taskID)
@@ -336,6 +341,7 @@ func (s *ImageGenerationService) pollTaskStatus(imageGenID uint, client image.Im
 	s.updateImageGenError(imageGenID, "timeout: image generation took too long")
 }
 
+// completeImageGeneration 完成图片生成处理
 func (s *ImageGenerationService) completeImageGeneration(imageGenID uint, result *image.ImageResult) {
 	now := time.Now()
 
@@ -528,7 +534,7 @@ func (s *ImageGenerationService) getImageClient(provider string) (image.ImageCli
 	}
 }
 
-// getImageClientWithModel 根据模型名称获取图片客户端
+// getImageClientWithModel 根据模型名称获取图片生成客户端
 func (s *ImageGenerationService) getImageClientWithModel(provider string, modelName string) (image.ImageClient, error) {
 	var config *models.AIServiceConfig
 	var err error
@@ -566,6 +572,9 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 	// 根据 provider 自动设置默认端点
 	var endpoint string
 	var queryEndpoint string
+
+	// {"provider": "vidu", "model": "viduq2", "base_url": "https://api.vidu.cn/ent/v2"}
+	s.log.Infow("图片生成配置", "provider", actualProvider, "model", model, "base_url", config.BaseURL)
 
 	switch actualProvider {
 	case "openai", "dalle":

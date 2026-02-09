@@ -76,9 +76,7 @@ func NewViduImageClient(baseURL, apiKey, model, endpoint string) *ViduClient {
 	if model == "" {
 		model = "viduq2" // 默认使用 viduq2
 	}
-	if baseURL == "" {
-		baseURL = "https://api.vidu.cn/ent/v2/"
-	}
+	baseURL = "https://api.vidu.cn/ent/v2/"
 
 	return &ViduClient{
 		ctx:     context.Background(),
@@ -97,6 +95,9 @@ func (c *ViduClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageRe
 		opt(options)
 	}
 
+	// 打印提示词
+	fmt.Printf("Vidu: 生成图片请求，prompt=%s, model=%s\n", prompt, c.Model)
+
 	// 构建请求体
 	req := ViduImageGenerationRequest{
 		Model:  c.Model,
@@ -113,37 +114,27 @@ func (c *ViduClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageRe
 		req.Seed = int(options.Seed)
 	}
 
-	// 设置宽高比 (从 Size 或 Width/Height 推断)
+	// 设置宽高比 - 解析 Size 字段
 	if options.Size != "" {
-		req.AspectRatio = options.Size
+		// 如果 Size 已经是比例格式（如 "16:9"），直接使用
+		if isAspectRatioFormat(options.Size) {
+			req.AspectRatio = options.Size
+		} else {
+			// 如果是分辨率格式（如 "2560x1440"），转换为比例
+			req.AspectRatio = parseResolutionToAspectRatio(options.Size)
+		}
 	} else if options.Width > 0 && options.Height > 0 {
 		// 根据宽高计算比例
-		ratio := float64(options.Width) / float64(options.Height)
-		switch {
-		case ratio > 1.7 && ratio < 1.8:
-			req.AspectRatio = "16:9"
-		case ratio > 0.55 && ratio < 0.57:
-			req.AspectRatio = "9:16"
-		case ratio > 0.9 && ratio < 1.1:
-			req.AspectRatio = "1:1"
-		case ratio > 0.74 && ratio < 0.76:
-			req.AspectRatio = "3:4"
-		case ratio > 1.32 && ratio < 1.34:
-			req.AspectRatio = "4:3"
-		case ratio > 2.3 && ratio < 2.4:
-			req.AspectRatio = "21:9"
-		case ratio > 0.66 && ratio < 0.67:
-			req.AspectRatio = "2:3"
-		case ratio > 1.49 && ratio < 1.51:
-			req.AspectRatio = "3:2"
-		default:
-			req.AspectRatio = "16:9" // 默认值
-		}
+		req.AspectRatio = calculateAspectRatio(options.Width, options.Height)
+	} else {
+		req.AspectRatio = "16:9" // 默认值
 	}
 
 	// 设置分辨率
+	// viduq1: 默认1080p，可选项：1080p
+	// viduq2: 默认1080p，可选项：1080p、2K、4K
 	if options.Quality != "" {
-		req.Resolution = options.Quality
+		req.Resolution = normalizeResolution(options.Quality)
 	} else {
 		req.Resolution = "1080p" // 默认值
 	}
@@ -160,6 +151,7 @@ func (c *ViduClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageRe
 
 	// 发送 HTTP 请求
 	url := c.BaseURL + "reference2image"
+	fmt.Printf("Vidu: 请求图片生成API地址: %v\n", url)
 	httpReq, err := http.NewRequestWithContext(c.ctx, "POST", url, nil)
 	if err != nil {
 		fmt.Printf("Vidu: 创建请求失败: %v\n", err)
@@ -169,6 +161,10 @@ func (c *ViduClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageRe
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Token "+c.APIKey)
 	httpReq.Body = io.NopCloser(bytes.NewReader(reqBody))
+
+	// 打印请求header和body
+	fmt.Printf("Vidu: 请求Header: %v\n", httpReq.Header)
+	fmt.Printf("Vidu: 请求Body: %s\n", string(reqBody))
 
 	resp, err := c.HTTPClient.Do(httpReq)
 	if err != nil {
@@ -198,6 +194,7 @@ func (c *ViduClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageRe
 		return nil, fmt.Errorf("解析响应失败: %w", err)
 	}
 
+	// Vidu: 图片生成任务已创建，task_id=918444265841922048, state=created
 	fmt.Printf("Vidu: 图片生成任务已创建，task_id=%s, state=%s\n", genResp.TaskID, genResp.State)
 
 	// 返回任务ID，状态为未完成
@@ -292,4 +289,99 @@ func (c *ViduClient) GetTaskStatus(taskID string) (*ImageResult, error) {
 	}
 
 	return result, nil
+}
+
+// isAspectRatioFormat 检查字符串是否为比例格式（如 "16:9"）
+func isAspectRatioFormat(s string) bool {
+	validRatios := map[string]bool{
+		"16:9": true, "9:16": true, "1:1": true,
+		"3:4": true, "4:3": true, "21:9": true,
+		"2:3": true, "3:2": true, "4:5": true,
+		"5:4": true, "9:21": true,
+	}
+	return validRatios[s]
+}
+
+// parseResolutionToAspectRatio 将分辨率格式转换为比例格式
+func parseResolutionToAspectRatio(size string) string {
+	// 尝试解析 "WxH" 格式
+	var width, height int
+	if _, err := fmt.Sscanf(size, "%dx%d", &width, &height); err == nil && width > 0 && height > 0 {
+		return calculateAspectRatio(width, height)
+	}
+	// 默认返回 16:9
+	return "16:9"
+}
+
+// calculateAspectRatio 根据宽高计算最接近的标准比例
+func calculateAspectRatio(width, height int) string {
+	ratio := float64(width) / float64(height)
+
+	// 定义标准比例及其数值
+	ratios := []struct {
+		name  string
+		value float64
+	}{
+		{"21:9", 21.0 / 9.0}, // 2.333
+		{"16:9", 16.0 / 9.0}, // 1.778
+		{"3:2", 3.0 / 2.0},   // 1.5
+		{"4:3", 4.0 / 3.0},   // 1.333
+		{"5:4", 5.0 / 4.0},   // 1.25
+		{"1:1", 1.0},         // 1.0
+		{"4:5", 4.0 / 5.0},   // 0.8
+		{"3:4", 3.0 / 4.0},   // 0.75
+		{"2:3", 2.0 / 3.0},   // 0.667
+		{"9:16", 9.0 / 16.0}, // 0.5625
+		{"9:21", 9.0 / 21.0}, // 0.429
+	}
+
+	// 找最接近的比例
+	closest := "16:9"
+	minDiff := float64(100)
+	for _, r := range ratios {
+		diff := abs(ratio - r.value)
+		if diff < minDiff {
+			minDiff = diff
+			closest = r.name
+		}
+	}
+	return closest
+}
+
+// abs 返回浮点数的绝对值
+func abs(x float64) float64 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+// normalizeResolution 标准化分辨率参数为 Vidu 支持的格式
+func normalizeResolution(quality string) string {
+	// Vidu 支持的分辨率: 720p, 1080p, 2k, 4k
+	switch quality {
+	case "720p", "hd":
+		return "720p"
+	case "1080p", "fhd", "standard":
+		return "1080p"
+	case "2k", "qhd":
+		return "2k"
+	case "4k", "uhd", "high":
+		return "4k"
+	default:
+		// 如果是数字分辨率格式，尝试映射
+		if quality == "2560x1440" || quality == "1440p" {
+			return "2k"
+		}
+		if quality == "3840x2160" || quality == "2160p" {
+			return "4k"
+		}
+		if quality == "1920x1080" {
+			return "1080p"
+		}
+		if quality == "1280x720" {
+			return "720p"
+		}
+		return "1080p" // 默认值
+	}
 }
