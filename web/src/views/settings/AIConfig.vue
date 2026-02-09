@@ -172,37 +172,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, ArrowLeft } from '@element-plus/icons-vue'
-import { aiAPI } from '@/api/ai'
-import { PageHeader } from '@/components/common'
-import type { AIServiceConfig, AIServiceType, CreateAIConfigRequest, UpdateAIConfigRequest } from '@/types/ai'
-import ConfigList from './components/ConfigList.vue'
+import { ref, reactive, onMounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import {
+  ElMessage,
+  ElMessageBox,
+  type FormInstance,
+  type FormRules,
+} from "element-plus";
+import { Plus, ArrowLeft } from "@element-plus/icons-vue";
+import { aiAPI } from "@/api/ai";
+import { PageHeader } from "@/components/common";
+import type {
+  AIServiceConfig,
+  AIServiceType,
+  CreateAIConfigRequest,
+  UpdateAIConfigRequest,
+} from "@/types/ai";
+import ConfigList from "./components/ConfigList.vue";
 
-const router = useRouter()
+const router = useRouter();
 
-const activeTab = ref<AIServiceType>('text')
-const loading = ref(false)
-const configs = ref<AIServiceConfig[]>([])
-const dialogVisible = ref(false)
-const isEdit = ref(false)
-const editingId = ref<number>()
-const formRef = ref<FormInstance>()
-const submitting = ref(false)
-const testing = ref(false)
+const activeTab = ref<AIServiceType>("text");
+const loading = ref(false);
+const configs = ref<AIServiceConfig[]>([]);
+const dialogVisible = ref(false);
+const isEdit = ref(false);
+const editingId = ref<number>();
+const formRef = ref<FormInstance>();
+const submitting = ref(false);
+const testing = ref(false);
 
-const form = reactive<CreateAIConfigRequest & { is_active?: boolean, provider?: string }>({
-  service_type: 'text',
-  provider: '',
-  name: '',
-  base_url: '',
-  api_key: '',
-  model: [],  // 改为数组支持多选
-  priority: 0,  // 默认优先级为0
-  is_active: true
-})
+const form = reactive<
+  CreateAIConfigRequest & { is_active?: boolean; provider?: string }
+>({
+  service_type: "text",
+  provider: "",
+  name: "",
+  base_url: "",
+  api_key: "",
+  model: [], // 改为数组支持多选
+  priority: 0, // 默认优先级为0
+  is_active: true,
+});
 
 // 厂商和模型配置
 interface ProviderConfig {
@@ -214,24 +226,25 @@ interface ProviderConfig {
 
 const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
   text: [
-    { id: 'openai', name: 'OpenAI', models: ['gpt-5.2', 'gemini-3-pro-preview'] },
-    { 
-      id: 'chatfire', 
-      name: 'Chatfire', 
-      models: [
-        'gemini-3-pro-preview',
-        'claude-sonnet-4-5-20250929',
-        'doubao-seed-1-8-251228',
-      ]
+    {
+      id: "openai",
+      name: "OpenAI",
+      models: ["gpt-5.2", "gemini-3-flash-preview"],
     },
-    { 
-      id: 'gemini', 
-      name: 'Google Gemini', 
+    {
+      id: "chatfire",
+      name: "Chatfire",
       models: [
-        'gemini-2.5-pro',
-        'gemini-3-pro-preview'
-      ]
-    }
+        "gemini-3-flash-preview",
+        "claude-sonnet-4-5-20250929",
+        "doubao-seed-1-8-251228",
+      ],
+    },
+    {
+      id: "gemini",
+      name: "Google Gemini",
+      models: ["gemini-2.5-pro", "gemini-3-flash-preview"],
+    },
   ],
   image: [
     {

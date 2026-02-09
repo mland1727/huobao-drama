@@ -5,30 +5,49 @@
         <template #left>
           <el-button text @click="$router.back()" class="back-btn">
             <el-icon><ArrowLeft /></el-icon>
-            <span>返回项目</span>
+            <span>{{ $t("workflow.backToProject") }}</span>
           </el-button>
-          <h1 class="header-title">{{ $t('workflow.episodeProduction', { number: episodeNumber }) }}</h1>
+          <h1 class="header-title">
+            {{ $t("workflow.episodeProduction", { number: episodeNumber }) }}
+          </h1>
         </template>
         <template #center>
           <div class="custom-steps">
-            <div class="step-item" :class="{ active: currentStep >= 0, current: currentStep === 0 }">
+            <div
+                class="step-item"
+                :class="{ active: currentStep >= 0, current: currentStep === 0 }"
+            >
               <div class="step-circle">1</div>
-              <span class="step-text">章节内容</span>
+              <span class="step-text">{{ $t("workflow.steps.content") }}</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
-            <div class="step-item" :class="{ active: currentStep >= 1, current: currentStep === 1 }">
+            <div
+                class="step-item"
+                :class="{ active: currentStep >= 1, current: currentStep === 1 }"
+            >
               <div class="step-circle">2</div>
-              <span class="step-text">生成图片</span>
+              <span class="step-text">{{
+                  $t("workflow.steps.generateImages")
+                }}</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
-            <div class="step-item" :class="{ active: currentStep >= 2, current: currentStep === 2 }">
+            <div
+                class="step-item"
+                :class="{ active: currentStep >= 2, current: currentStep === 2 }"
+            >
               <div class="step-circle">3</div>
-              <span class="step-text">拆分分镜</span>
+              <span class="step-text">{{
+                  $t("workflow.steps.splitStoryboard")
+                }}</span>
             </div>
           </div>
         </template>
         <template #right>
-          <el-button :icon="Setting" @click="showModelConfigDialog" title="图文配置">
+          <el-button
+              :icon="Setting"
+              @click="showModelConfigDialog"
+              :title="$t('workflow.modelConfig')"
+          >
             图文配置
           </el-button>
         </template>
@@ -37,26 +56,26 @@
       <div class="content-container">
         <!-- 阶段 0: 章节内容 + 提取角色场景 -->
         <el-card
-          v-show="currentStep === 0"
-          shadow="never"
-          class="stage-card stage-card-fullscreen"
+            v-show="currentStep === 0"
+            shadow="never"
+            class="stage-card stage-card-fullscreen"
         >
           <div class="stage-body stage-body-fullscreen">
             <!-- 未保存时显示输入框 -->
             <div v-if="!hasScript" class="generation-form">
               <el-input
-                v-model="scriptContent"
-                type="textarea"
-                :placeholder="$t('workflow.scriptPlaceholder')"
-                class="script-textarea script-textarea-fullscreen"
+                  v-model="scriptContent"
+                  type="textarea"
+                  :placeholder="$t('workflow.scriptPlaceholder')"
+                  class="script-textarea script-textarea-fullscreen"
               />
 
               <div class="action-buttons-inline">
                 <el-button
-                  type="primary"
-                  size="default"
-                  @click="saveChapterScript"
-                  :disabled="!scriptContent.trim() || generatingScript"
+                    type="primary"
+                    size="default"
+                    @click="saveChapterScript"
+                    :disabled="!scriptContent.trim() || generatingScript"
                 >
                   <el-icon><Check /></el-icon>
                   <span>{{ $t("workflow.saveChapter") }}</span>
@@ -71,16 +90,16 @@
                   {{ $t("workflow.chapterContent", { number: episodeNumber }) }}
                 </h3>
                 <el-tag type="success" size="large">{{
-                  $t("workflow.saved")
-                }}</el-tag>
+                    $t("workflow.saved")
+                  }}</el-tag>
               </div>
               <div class="overview-content">
                 <el-input
-                  v-model="currentEpisode.script_content"
-                  type="textarea"
-                  :rows="15"
-                  readonly
-                  class="script-display"
+                    v-model="currentEpisode.script_content"
+                    type="textarea"
+                    :rows="15"
+                    readonly
+                    class="script-display"
                 />
               </div>
 
@@ -89,19 +108,19 @@
               <!-- 显示已提取的角色和场景 -->
               <div v-if="hasExtractedData" class="extracted-info">
                 <el-alert
-                  type="success"
-                  :closable="false"
-                  style="margin-bottom: 16px"
+                    type="success"
+                    :closable="false"
+                    style="margin-bottom: 16px"
                 >
                   <template #title>
                     <div style="display: flex; align-items: center; gap: 16px">
                       <span>✅ {{ $t("workflow.extractedData") }}</span>
                       <el-tag v-if="hasCharacters" type="success"
-                        >{{ $t("workflow.characters") }}:
+                      >{{ $t("workflow.characters") }}:
                         {{ charactersCount }}</el-tag
                       >
                       <el-tag v-if="currentEpisode?.scenes" type="success"
-                        >{{ $t("workflow.scenes") }}:
+                      >{{ $t("workflow.scenes") }}:
                         {{ currentEpisode.scenes.length }}</el-tag
                       >
                     </div>
@@ -115,13 +134,13 @@
                   </h4>
                   <div style="display: flex; flex-wrap: wrap; gap: 8px">
                     <el-tag
-                      v-for="char in currentEpisode?.characters"
-                      :key="char.id"
-                      type="info"
+                        v-for="char in currentEpisode?.characters"
+                        :key="char.id"
+                        type="info"
                     >
                       {{ char.name }}
                       <span v-if="char.role" class="secondary-text"
-                        >({{ char.role }})</span
+                      >({{ char.role }})</span
                       >
                     </el-tag>
                   </div>
@@ -129,7 +148,7 @@
 
                 <!-- 场景列表 -->
                 <div
-                  v-if="
+                    v-if="
                     currentEpisode?.scenes && currentEpisode.scenes.length > 0
                   "
                 >
@@ -138,9 +157,9 @@
                   </h4>
                   <div style="display: flex; flex-wrap: wrap; gap: 8px">
                     <el-tag
-                      v-for="scene in currentEpisode.scenes"
-                      :key="scene.id"
-                      type="warning"
+                        v-for="scene in currentEpisode.scenes"
+                        :key="scene.id"
+                        type="warning"
                     >
                       {{ scene.location }}
                       <span class="secondary-text">· {{ scene.time }}</span>
@@ -152,145 +171,175 @@
           </div>
         </el-card>
 
-    <!-- 阶段 1: 生成图片 -->
-    <el-card v-show="currentStep === 1" class="workflow-card">
-      <div class="stage-body">
-        <!-- 角色图片生成 -->
-        <div class="image-gen-section">
-          <div class="section-header">
-            <div class="section-title">
-              <h3>
-                <el-icon><User /></el-icon>
-                角色图片
-              </h3>
-              <el-alert
-                type="info"
-                :closable="false"
-                style="margin: 0;"
-              >
-                角色数量: {{ charactersCount }}
-              </el-alert>
-            </div>
-            <div class="section-actions">
-              <el-checkbox
-                v-model="selectAllCharacters"
-                @change="toggleSelectAllCharacters"
-                style="margin-right: 12px;"
-              >
-                全选
-              </el-checkbox>
-              <el-button
-                type="primary"
-                @click="batchGenerateCharacterImages"
-                :loading="batchGeneratingCharacters"
-                :disabled="selectedCharacterIds.length === 0"
-                size="default"
-              >
-                批量生成 ({{ selectedCharacterIds.length }})
-              </el-button>
-            </div>
-          </div>
-
-          <div class="character-image-list">
-            <div v-for="char in currentEpisode?.characters" :key="char.id" class="character-item">
-              <el-card shadow="hover" class="fixed-card">
-                <div class="card-header">
+        <!-- 阶段 1: 生成图片 -->
+        <el-card v-show="currentStep === 1" class="workflow-card">
+          <div class="stage-body">
+            <!-- 角色图片生成 -->
+            <div class="image-gen-section">
+              <div class="section-header">
+                <div class="section-title">
+                  <h3>
+                    <el-icon><User /></el-icon>
+                    {{ $t("workflow.characterImages") }}
+                  </h3>
+                  <el-alert type="info" :closable="false" style="margin: 0">
+                    {{
+                      $t("workflow.characterCount", { count: charactersCount })
+                    }}
+                  </el-alert>
+                </div>
+                <div class="section-actions">
                   <el-checkbox
-                    v-model="selectedCharacterIds"
-                    :value="char.id"
-                    style="margin-right: 8px;"
-                  />
-                  <div class="header-left">
-                    <h4>{{ char.name }}</h4>
-                    <el-tag size="small">{{ char.role }}</el-tag>
-                  </div>
+                      v-model="selectAllCharacters"
+                      @change="toggleSelectAllCharacters"
+                      style="margin-right: 12px"
+                  >
+                    {{ $t("workflow.selectAll") }}
+                  </el-checkbox>
                   <el-button
-                    type="danger"
-                    size="small"
-                    :icon="Delete"
-                    circle
-                    @click="deleteCharacter(char.id)"
-                    title="删除角色"
-                  />
+                      type="primary"
+                      @click="batchGenerateCharacterImages"
+                      :loading="batchGeneratingCharacters"
+                      :disabled="selectedCharacterIds.length === 0"
+                      size="default"
+                  >
+                    {{ $t("workflow.batchGenerate") }} ({{
+                      selectedCharacterIds.length
+                    }})
+                  </el-button>
                 </div>
+              </div>
 
-                <div class="card-image-container">
-                  <div v-if="char.image_url" class="char-image">
-                    <el-image :src="char.image_url" fit="cover" />
-                  </div>
-                  <div v-else-if="char.image_generation_status === 'pending' || char.image_generation_status === 'processing' || generatingCharacterImages[char.id]" class="char-placeholder generating">
-                    <el-icon :size="64" class="rotating"><Loading /></el-icon>
-                    <span>生成中</span>
-                    <el-tag type="warning" size="small" style="margin-top: 8px;">{{ char.image_generation_status === 'pending' ? '排队中' : '处理中' }}</el-tag>
-                  </div>
-                  <div v-else-if="char.image_generation_status === 'failed'" class="char-placeholder failed">
-                    <el-icon :size="64"><WarningFilled /></el-icon>
-                    <span>生成失败</span>
-                    <el-tag type="danger" size="small" style="margin-top: 8px;">点击重新生成</el-tag>
-                  </div>
-                  <div v-else class="char-placeholder">
-                    <el-icon :size="64"><User /></el-icon>
-                    <span>未生成</span>
-                  </div>
-                </div>
+              <div class="character-image-list">
+                <div
+                    v-for="char in currentEpisode?.characters"
+                    :key="char.id"
+                    class="character-item"
+                >
+                  <el-card shadow="hover" class="fixed-card">
+                    <div class="card-header">
+                      <el-checkbox
+                          v-model="selectedCharacterIds"
+                          :value="char.id"
+                          style="margin-right: 8px"
+                      />
+                      <div class="header-left">
+                        <h4>{{ char.name }}</h4>
+                        <el-tag size="small">{{ char.role }}</el-tag>
+                      </div>
+                      <el-button
+                          type="danger"
+                          size="small"
+                          :icon="Delete"
+                          circle
+                          @click="deleteCharacter(char.id)"
+                          :title="$t('workflow.deleteCharacter')"
+                      />
+                    </div>
+
+                    <div class="card-image-container">
+                      <div v-if="hasImage(char)" class="char-image">
+                        <el-image :src="getImageUrl(char)" fit="cover" />
+                      </div>
+                      <div
+                          v-else-if="
+                          char.image_generation_status === 'pending' ||
+                          char.image_generation_status === 'processing' ||
+                          generatingCharacterImages[char.id]
+                        "
+                          class="char-placeholder generating"
+                      >
+                        <el-icon :size="64" class="rotating"
+                        ><Loading
+                        /></el-icon>
+                        <span>{{ $t("common.generating") }}</span>
+                        <el-tag
+                            type="warning"
+                            size="small"
+                            style="margin-top: 8px"
+                        >{{
+                            char.image_generation_status === "pending"
+                                ? $t("common.queuing")
+                                : $t("common.processing")
+                          }}</el-tag
+                        >
+                      </div>
+                      <div
+                          v-else-if="char.image_generation_status === 'failed'"
+                          class="char-placeholder failed"
+                      >
+                        <el-icon :size="64"><WarningFilled /></el-icon>
+                        <span>{{ $t("common.generateFailed") }}</span>
+                        <el-tag
+                            type="danger"
+                            size="small"
+                            style="margin-top: 8px"
+                        >{{ $t("common.clickToRegenerate") }}</el-tag
+                        >
+                      </div>
+                      <div v-else class="char-placeholder">
+                        <el-icon :size="64"><User /></el-icon>
+                        <span>{{ $t("common.notGenerated") }}</span>
+                      </div>
+                    </div>
 
                     <div class="card-actions">
                       <el-tooltip
-                        :content="$t('tooltip.editPrompt')"
-                        placement="top"
+                          :content="$t('tooltip.editPrompt')"
+                          placement="top"
                       >
                         <el-button
-                          size="small"
-                          @click="openPromptDialog(char, 'character')"
-                          :icon="Edit"
-                          circle
+                            size="small"
+                            @click="openPromptDialog(char, 'character')"
+                            :icon="Edit"
+                            circle
                         />
                       </el-tooltip>
                       <el-tooltip
-                        :content="$t('tooltip.aiGenerate')"
-                        placement="top"
+                          :content="$t('tooltip.aiGenerate')"
+                          placement="top"
                       >
                         <el-button
-                          type="primary"
-                          size="small"
-                          @click="generateCharacterImage(char.id)"
-                          :loading="generatingCharacterImages[char.id]"
-                          :icon="MagicStick"
-                          circle
+                            type="primary"
+                            size="small"
+                            @click="generateCharacterImage(char.id)"
+                            :loading="generatingCharacterImages[char.id]"
+                            :icon="MagicStick"
+                            circle
                         />
                       </el-tooltip>
                       <el-tooltip
-                        :content="$t('tooltip.uploadImage')"
-                        placement="top"
+                          :content="$t('tooltip.uploadImage')"
+                          placement="top"
                       >
                         <el-button
-                          size="small"
-                          @click="uploadCharacterImage(char.id)"
-                          :icon="Upload"
-                          circle
+                            size="small"
+                            @click="uploadCharacterImage(char.id)"
+                            :icon="Upload"
+                            circle
                         />
                       </el-tooltip>
                       <el-tooltip
-                        :content="$t('tooltip.selectFromLibrary')"
-                        placement="top"
+                          :content="$t('tooltip.selectFromLibrary')"
+                          placement="top"
                       >
                         <el-button
-                          size="small"
-                          @click="selectFromLibrary(char.id)"
-                          :icon="Picture"
-                          circle
+                            size="small"
+                            @click="selectFromLibrary(char.id)"
+                            :icon="Picture"
+                            circle
                         />
                       </el-tooltip>
                       <el-tooltip
-                        :content="$t('workflow.addToLibrary')"
-                        placement="top"
+                          :content="$t('workflow.addToLibrary')"
+                          placement="top"
                       >
                         <el-button
-                          size="small"
-                          @click="addToCharacterLibrary(char)"
-                          :icon="FolderAdd"
-                          :disabled="!char.image_url"
-                          circle
+                            size="small"
+                            @click="addToCharacterLibrary(char)"
+                            :icon="FolderAdd"
+                            :disabled="!char.image_url"
+                            circle
                         />
                       </el-tooltip>
                     </div>
@@ -326,18 +375,18 @@
                   {{ $t("workflow.extractFromScript") }}
                 </el-button> -->
                   <el-checkbox
-                    v-model="selectAllScenes"
-                    @change="toggleSelectAllScenes"
-                    style="margin-left: 12px; margin-right: 12px"
+                      v-model="selectAllScenes"
+                      @change="toggleSelectAllScenes"
+                      style="margin-left: 12px; margin-right: 12px"
                   >
                     {{ $t("workflow.selectAll") }}
                   </el-checkbox>
                   <el-button
-                    type="primary"
-                    @click="batchGenerateSceneImages"
-                    :loading="batchGeneratingScenes"
-                    :disabled="selectedSceneIds.length === 0"
-                    size="default"
+                      type="primary"
+                      @click="batchGenerateSceneImages"
+                      :loading="batchGeneratingScenes"
+                      :disabled="selectedSceneIds.length === 0"
+                      size="default"
                   >
                     {{ $t("workflow.batchGenerateSelected") }} ({{
                       selectedSceneIds.length
@@ -345,9 +394,9 @@
                   </el-button>
 
                   <el-button
-                    :icon="Plus"
-                    @click="openAddSceneDialog"
-                    size="default"
+                      :icon="Plus"
+                      @click="openAddSceneDialog"
+                      size="default"
                   >
                     {{ $t("workflow.addScene") }}
                   </el-button>
@@ -356,16 +405,16 @@
 
               <div class="scene-image-list">
                 <div
-                  v-for="scene in currentEpisode?.scenes"
-                  :key="scene.id"
-                  class="scene-item"
+                    v-for="scene in currentEpisode?.scenes"
+                    :key="scene.id"
+                    class="scene-item"
                 >
                   <el-card shadow="hover" class="fixed-card">
                     <div class="card-header">
                       <el-checkbox
-                        v-model="selectedSceneIds"
-                        :value="scene.id"
-                        style="margin-right: 8px"
+                          v-model="selectedSceneIds"
+                          :value="scene.id"
+                          style="margin-right: 8px"
                       />
                       <div class="header-left">
                         <h4>{{ scene.location }}</h4>
@@ -378,41 +427,41 @@
                         <el-image :src="getImageUrl(scene)" fit="cover" />
                       </div>
                       <div
-                        v-else-if="
+                          v-else-if="
                           scene.image_generation_status === 'pending' ||
                           scene.image_generation_status === 'processing' ||
                           generatingSceneImages[scene.id]
                         "
-                        class="scene-placeholder generating"
+                          class="scene-placeholder generating"
                       >
                         <el-icon :size="64" class="rotating"
-                          ><Loading
+                        ><Loading
                         /></el-icon>
                         <span>{{ $t("common.generating") }}</span>
                         <el-tag
-                          type="warning"
-                          size="small"
-                          style="margin-top: 8px"
-                          >{{
+                            type="warning"
+                            size="small"
+                            style="margin-top: 8px"
+                        >{{
                             scene.image_generation_status === "pending"
-                              ? $t("common.queuing")
-                              : $t("common.processing")
+                                ? $t("common.queuing")
+                                : $t("common.processing")
                           }}</el-tag
                         >
                       </div>
                       <div
-                        v-else-if="scene.image_generation_status === 'failed'"
-                        class="scene-placeholder failed"
-                        @click="generateSceneImage(scene.id)"
-                        style="cursor: pointer"
+                          v-else-if="scene.image_generation_status === 'failed'"
+                          class="scene-placeholder failed"
+                          @click="generateSceneImage(scene.id)"
+                          style="cursor: pointer"
                       >
                         <el-icon :size="64"><WarningFilled /></el-icon>
                         <span>{{ $t("common.generateFailed") }}</span>
                         <el-tag
-                          type="danger"
-                          size="small"
-                          style="margin-top: 8px"
-                          >{{ $t("common.clickToRegenerate") }}</el-tag
+                            type="danger"
+                            size="small"
+                            style="margin-top: 8px"
+                        >{{ $t("common.clickToRegenerate") }}</el-tag
                         >
                       </div>
                       <div v-else class="scene-placeholder">
@@ -423,38 +472,38 @@
 
                     <div class="card-actions">
                       <el-tooltip
-                        :content="$t('tooltip.editPrompt')"
-                        placement="top"
+                          :content="$t('tooltip.editPrompt')"
+                          placement="top"
                       >
                         <el-button
-                          size="small"
-                          @click="openPromptDialog(scene, 'scene')"
-                          :icon="Edit"
-                          circle
+                            size="small"
+                            @click="openPromptDialog(scene, 'scene')"
+                            :icon="Edit"
+                            circle
                         />
                       </el-tooltip>
                       <el-tooltip
-                        :content="$t('tooltip.aiGenerate')"
-                        placement="top"
+                          :content="$t('tooltip.aiGenerate')"
+                          placement="top"
                       >
                         <el-button
-                          type="primary"
-                          size="small"
-                          @click="generateSceneImage(scene.id)"
-                          :loading="generatingSceneImages[scene.id]"
-                          :icon="MagicStick"
-                          circle
+                            type="primary"
+                            size="small"
+                            @click="generateSceneImage(scene.id)"
+                            :loading="generatingSceneImages[scene.id]"
+                            :icon="MagicStick"
+                            circle
                         />
                       </el-tooltip>
                       <el-tooltip
-                        :content="$t('tooltip.uploadImage')"
-                        placement="top"
+                          :content="$t('tooltip.uploadImage')"
+                          placement="top"
                       >
                         <el-button
-                          size="small"
-                          @click="uploadSceneImage(scene.id)"
-                          :icon="Upload"
-                          circle
+                            size="small"
+                            @click="uploadSceneImage(scene.id)"
+                            :icon="Upload"
+                            circle
                         />
                       </el-tooltip>
                     </div>
@@ -470,75 +519,75 @@
           <div class="stage-body">
             <!-- 分镜列表 -->
             <div
-              v-if="
+                v-if="
                 currentEpisode?.storyboards &&
                 currentEpisode.storyboards.length > 0
               "
-              class="shots-list"
+                class="shots-list"
             >
               <div class="shots-header">
                 <h3>{{ $t("workflow.shotList") }}</h3>
               </div>
 
               <el-table
-                :data="currentEpisode.storyboards"
-                border
-                stripe
-                style="margin-top: 16px"
+                  :data="currentEpisode.storyboards"
+                  border
+                  stripe
+                  style="margin-top: 16px"
               >
                 <el-table-column
-                  type="index"
-                  :label="$t('storyboard.table.number')"
-                  width="60"
+                    type="index"
+                    :label="$t('storyboard.table.number')"
+                    width="60"
                 />
                 <el-table-column
-                  :label="$t('storyboard.table.title')"
-                  width="120"
-                  show-overflow-tooltip
+                    :label="$t('storyboard.table.title')"
+                    width="120"
+                    show-overflow-tooltip
                 >
                   <template #default="{ row }">
                     {{ row.title || "-" }}
                   </template>
                 </el-table-column>
                 <el-table-column
-                  :label="$t('storyboard.table.shotType')"
-                  width="80"
+                    :label="$t('storyboard.table.shotType')"
+                    width="80"
                 >
                   <template #default="{ row }">
                     {{ row.shot_type || "-" }}
                   </template>
                 </el-table-column>
                 <el-table-column
-                  :label="$t('storyboard.table.movement')"
-                  width="80"
+                    :label="$t('storyboard.table.movement')"
+                    width="80"
                 >
                   <template #default="{ row }">
                     {{ row.movement || "-" }}
                   </template>
                 </el-table-column>
                 <el-table-column
-                  :label="$t('storyboard.table.location')"
-                  width="150"
+                    :label="$t('storyboard.table.location')"
+                    width="150"
                 >
                   <template #default="{ row }">
                     <el-popover
-                      placement="right"
-                      :width="300"
-                      trigger="hover"
-                      :content="row.action || '-'"
+                        placement="right"
+                        :width="300"
+                        trigger="hover"
+                        :content="row.action || '-'"
                     >
                       <template #reference>
                         <!-- 单行打点 -->
                         <span class="overflow-tooltip">{{
-                          row.location || "-"
-                        }}</span>
+                            row.location || "-"
+                          }}</span>
                       </template>
                     </el-popover>
                   </template>
                 </el-table-column>
                 <el-table-column
-                  :label="$t('storyboard.table.character')"
-                  width="100"
+                    :label="$t('storyboard.table.character')"
+                    width="100"
                 >
                   <template #default="{ row }">
                     <span v-if="row.characters && row.characters.length > 0">
@@ -550,38 +599,38 @@
                 <el-table-column :label="$t('storyboard.table.action')">
                   <template #default="{ row }">
                     <el-popover
-                      placement="right"
-                      :width="300"
-                      trigger="hover"
-                      :content="row.action || '-'"
+                        placement="right"
+                        :width="300"
+                        trigger="hover"
+                        :content="row.action || '-'"
                     >
                       <template #reference>
                         <!-- 单行打点 -->
                         <span class="overflow-tooltip">{{
-                          row.action || "-"
-                        }}</span>
+                            row.action || "-"
+                          }}</span>
                       </template>
                     </el-popover>
                   </template>
                 </el-table-column>
                 <el-table-column
-                  :label="$t('storyboard.table.duration')"
-                  width="80"
+                    :label="$t('storyboard.table.duration')"
+                    width="80"
                 >
                   <template #default="{ row }">
                     {{ row.duration || "-" }}秒
                   </template>
                 </el-table-column>
                 <el-table-column
-                  :label="$t('storyboard.table.operations')"
-                  width="100"
-                  fixed="right"
+                    :label="$t('storyboard.table.operations')"
+                    width="100"
+                    fixed="right"
                 >
                   <template #default="{ row, $index }">
                     <el-button
-                      type="primary"
-                      size="small"
-                      @click="editShot(row, $index)"
+                        type="primary"
+                        size="small"
+                        @click="editShot(row, $index)"
                     >
                       {{ $t("common.edit") }}
                     </el-button>
@@ -594,22 +643,22 @@
             <div v-else class="empty-shots">
               <el-empty :description="$t('workflow.splitStoryboardFirst')">
                 <el-button
-                  type="primary"
-                  @click="generateShots"
-                  :loading="generatingShots"
-                  :icon="MagicStick"
+                    type="primary"
+                    @click="generateShots"
+                    :loading="generatingShots"
+                    :icon="MagicStick"
                 >
                   {{
                     generatingShots
-                      ? $t("workflow.aiSplitting")
-                      : $t("workflow.aiAutoSplit")
+                        ? $t("workflow.aiSplitting")
+                        : $t("workflow.aiAutoSplit")
                   }}
                 </el-button>
 
                 <!-- 任务进度显示 -->
                 <div
-                  v-if="generatingShots"
-                  style="
+                    v-if="generatingShots"
+                    style="
                     margin-top: 24px;
                     max-width: 400px;
                     margin-left: auto;
@@ -617,8 +666,8 @@
                   "
                 >
                   <el-progress
-                    :percentage="taskProgress"
-                    :status="taskProgress === 100 ? 'success' : undefined"
+                      :percentage="taskProgress"
+                      :status="taskProgress === 100 ? 'success' : undefined"
                   >
                     <template #default="{ percentage }">
                       <span style="font-size: 12px">{{ percentage }}%</span>
@@ -637,33 +686,33 @@
       <div class="actions-container">
         <div class="action-buttons" v-show="currentStep === 0">
           <el-button
-            type="primary"
-            size="large"
-            @click="handleExtractCharactersAndBackgrounds"
-            :loading="extractingCharactersAndBackgrounds"
-            :disabled="!hasScript"
+              type="primary"
+              size="large"
+              @click="handleExtractCharactersAndBackgrounds"
+              :loading="extractingCharactersAndBackgrounds"
+              :disabled="!hasScript"
           >
             <el-icon><MagicStick /></el-icon>
             {{
               hasExtractedData
-                ? $t("workflow.reExtract")
-                : $t("workflow.extractCharactersAndScenes")
+                  ? $t("workflow.reExtract")
+                  : $t("workflow.extractCharactersAndScenes")
             }}
           </el-button>
           <el-button
-            type="success"
-            size="large"
-            @click="nextStep"
-            :disabled="!hasExtractedData"
+              type="success"
+              size="large"
+              @click="nextStep"
+              :disabled="!hasExtractedData"
           >
             {{ $t("workflow.nextStepGenerateImages") }}
             <el-icon><ArrowRight /></el-icon>
           </el-button>
           <div v-if="!hasExtractedData" style="margin-top: 8px">
             <el-alert
-              type="warning"
-              :closable="false"
-              style="display: inline-block"
+                type="warning"
+                :closable="false"
+                style="display: inline-block"
             >
               <template #title>
                 <span style="font-size: 12px">
@@ -680,19 +729,19 @@
             {{ $t("workflow.prevStep") }}
           </el-button>
           <el-button
-            type="success"
-            size="large"
-            @click="nextStep"
-            :disabled="!allImagesGenerated"
+              type="success"
+              size="large"
+              @click="nextStep"
+              :disabled="!allImagesGenerated"
           >
             {{ $t("workflow.nextStepSplitShots") }}
             <el-icon><ArrowRight /></el-icon>
           </el-button>
           <div v-if="!allImagesGenerated" style="margin-top: 8px">
             <el-alert
-              type="warning"
-              :closable="false"
-              style="display: inline-block"
+                type="warning"
+                :closable="false"
+                style="display: inline-block"
             >
               <template #title>
                 <span style="font-size: 12px">
@@ -722,16 +771,16 @@
     <div class="components-box">
       <!-- 镜头编辑对话框 -->
       <el-dialog
-        v-model="shotEditDialogVisible"
-        :title="$t('workflow.editShot')"
-        width="800px"
-        :close-on-click-modal="false"
+          v-model="shotEditDialogVisible"
+          :title="$t('workflow.editShot')"
+          width="800px"
+          :close-on-click-modal="false"
       >
         <el-form v-if="editingShot" label-width="100px" size="default">
           <el-form-item :label="$t('workflow.shotTitle')">
             <el-input
-              v-model="editingShot.title"
-              :placeholder="$t('workflow.shotTitlePlaceholder')"
+                v-model="editingShot.title"
+                :placeholder="$t('workflow.shotTitlePlaceholder')"
             />
           </el-form-item>
 
@@ -739,16 +788,16 @@
             <el-col :span="8">
               <el-form-item :label="$t('workflow.shotType')">
                 <el-select
-                  v-model="editingShot.shot_type"
-                  :placeholder="$t('workflow.selectShotType')"
+                    v-model="editingShot.shot_type"
+                    :placeholder="$t('workflow.selectShotType')"
                 >
                   <el-option :label="$t('workflow.longShot')" value="远景" />
                   <el-option :label="$t('workflow.fullShot')" value="全景" />
                   <el-option :label="$t('workflow.mediumShot')" value="中景" />
                   <el-option :label="$t('workflow.closeUp')" value="近景" />
                   <el-option
-                    :label="$t('workflow.extremeCloseUp')"
-                    value="特写"
+                      :label="$t('workflow.extremeCloseUp')"
+                      value="特写"
                   />
                 </el-select>
               </el-form-item>
@@ -756,8 +805,8 @@
             <el-col :span="8">
               <el-form-item :label="$t('workflow.cameraAngle')">
                 <el-select
-                  v-model="editingShot.angle"
-                  :placeholder="$t('workflow.selectAngle')"
+                    v-model="editingShot.angle"
+                    :placeholder="$t('workflow.selectAngle')"
                 >
                   <el-option :label="$t('workflow.eyeLevel')" value="平视" />
                   <el-option :label="$t('workflow.lowAngle')" value="仰视" />
@@ -769,12 +818,12 @@
             <el-col :span="8">
               <el-form-item :label="$t('workflow.cameraMovement')">
                 <el-select
-                  v-model="editingShot.movement"
-                  :placeholder="$t('workflow.selectMovement')"
+                    v-model="editingShot.movement"
+                    :placeholder="$t('workflow.selectMovement')"
                 >
                   <el-option
-                    :label="$t('workflow.staticShot')"
-                    value="固定镜头"
+                      :label="$t('workflow.staticShot')"
+                      value="固定镜头"
                   />
                   <el-option :label="$t('workflow.pushIn')" value="推镜" />
                   <el-option :label="$t('workflow.pullOut')" value="拉镜" />
@@ -788,16 +837,16 @@
             <el-col :span="12">
               <el-form-item :label="$t('workflow.location')">
                 <el-input
-                  v-model="editingShot.location"
-                  :placeholder="$t('workflow.locationPlaceholder')"
+                    v-model="editingShot.location"
+                    :placeholder="$t('workflow.locationPlaceholder')"
                 />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item :label="$t('workflow.time')">
                 <el-input
-                  v-model="editingShot.time"
-                  :placeholder="$t('workflow.timeSetting')"
+                    v-model="editingShot.time"
+                    :placeholder="$t('workflow.timeSetting')"
                 />
               </el-form-item>
             </el-col>
@@ -805,64 +854,64 @@
 
           <el-form-item :label="$t('workflow.shotDescription')">
             <el-input
-              v-model="editingShot.description"
-              type="textarea"
-              :rows="2"
-              :placeholder="$t('workflow.shotDescriptionPlaceholder')"
+                v-model="editingShot.description"
+                type="textarea"
+                :rows="2"
+                :placeholder="$t('workflow.shotDescriptionPlaceholder')"
             />
           </el-form-item>
 
           <el-form-item :label="$t('workflow.actionDescription')">
             <el-input
-              v-model="editingShot.action"
-              type="textarea"
-              :rows="3"
-              :placeholder="$t('workflow.detailedAction')"
+                v-model="editingShot.action"
+                type="textarea"
+                :rows="3"
+                :placeholder="$t('workflow.detailedAction')"
             />
           </el-form-item>
 
           <el-form-item :label="$t('workflow.dialogue')">
             <el-input
-              v-model="editingShot.dialogue"
-              type="textarea"
-              :rows="2"
-              :placeholder="$t('workflow.characterDialogue')"
+                v-model="editingShot.dialogue"
+                type="textarea"
+                :rows="2"
+                :placeholder="$t('workflow.characterDialogue')"
             />
           </el-form-item>
 
           <el-form-item :label="$t('workflow.result')">
             <el-input
-              v-model="editingShot.result"
-              type="textarea"
-              :rows="2"
-              :placeholder="$t('workflow.actionResult')"
+                v-model="editingShot.result"
+                type="textarea"
+                :rows="2"
+                :placeholder="$t('workflow.actionResult')"
             />
           </el-form-item>
 
           <el-form-item :label="$t('workflow.atmosphere')">
             <el-input
-              v-model="editingShot.atmosphere"
-              type="textarea"
-              :rows="2"
-              :placeholder="$t('workflow.atmosphereDescription')"
+                v-model="editingShot.atmosphere"
+                type="textarea"
+                :rows="2"
+                :placeholder="$t('workflow.atmosphereDescription')"
             />
           </el-form-item>
 
           <el-form-item :label="$t('workflow.imagePrompt')">
             <el-input
-              v-model="editingShot.image_prompt"
-              type="textarea"
-              :rows="3"
-              :placeholder="$t('workflow.imagePromptPlaceholder')"
+                v-model="editingShot.image_prompt"
+                type="textarea"
+                :rows="3"
+                :placeholder="$t('workflow.imagePromptPlaceholder')"
             />
           </el-form-item>
 
           <el-form-item :label="$t('workflow.videoPrompt')">
             <el-input
-              v-model="editingShot.video_prompt"
-              type="textarea"
-              :rows="3"
-              :placeholder="$t('workflow.videoPromptPlaceholder')"
+                v-model="editingShot.video_prompt"
+                type="textarea"
+                :rows="3"
+                :placeholder="$t('workflow.videoPromptPlaceholder')"
             />
           </el-form-item>
 
@@ -870,16 +919,16 @@
             <el-col :span="12">
               <el-form-item :label="$t('workflow.bgmHint')">
                 <el-input
-                  v-model="editingShot.bgm_prompt"
-                  :placeholder="$t('workflow.bgmAtmosphere')"
+                    v-model="editingShot.bgm_prompt"
+                    :placeholder="$t('workflow.bgmAtmosphere')"
                 />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item :label="$t('workflow.soundEffect')">
                 <el-input
-                  v-model="editingShot.sound_effect"
-                  :placeholder="$t('workflow.soundEffectDescription')"
+                    v-model="editingShot.sound_effect"
+                    :placeholder="$t('workflow.soundEffectDescription')"
                 />
               </el-form-item>
             </el-col>
@@ -887,76 +936,76 @@
 
           <el-form-item :label="$t('workflow.durationSeconds')">
             <el-input-number
-              v-model="editingShot.duration"
-              :min="1"
-              :max="60"
+                v-model="editingShot.duration"
+                :min="1"
+                :max="60"
             />
           </el-form-item>
         </el-form>
 
         <template #footer>
           <el-button @click="shotEditDialogVisible = false">{{
-            $t("common.cancel")
-          }}</el-button>
+              $t("common.cancel")
+            }}</el-button>
           <el-button
-            type="primary"
-            @click="saveShotEdit"
-            :loading="savingShot"
-            >{{ $t("common.save") }}</el-button
+              type="primary"
+              @click="saveShotEdit"
+              :loading="savingShot"
+          >{{ $t("common.save") }}</el-button
           >
         </template>
       </el-dialog>
 
       <!-- 提示词编辑对话框 -->
       <el-dialog
-        v-model="promptDialogVisible"
-        :title="$t('workflow.editPrompt')"
-        width="600px"
+          v-model="promptDialogVisible"
+          :title="$t('workflow.editPrompt')"
+          width="600px"
       >
         <el-form label-width="80px">
           <el-form-item :label="$t('common.name')">
             <el-input v-model="currentEditItem.name" disabled />
           </el-form-item>
           <el-form-item
-            v-if="currentEditType === 'scene'"
-            :label="$t('workflow.time')"
+              v-if="currentEditType === 'scene'"
+              :label="$t('workflow.time')"
           >
             <el-input
-              v-model="currentEditItem.time"
-              :placeholder="$t('workflow.timePlaceholder')"
+                v-model="currentEditItem.time"
+                :placeholder="$t('workflow.timePlaceholder')"
             />
           </el-form-item>
           <el-form-item :label="$t('workflow.imagePrompt')">
             <el-input
-              v-model="editPrompt"
-              type="textarea"
-              :rows="6"
-              :placeholder="$t('workflow.imagePromptPlaceholder')"
+                v-model="editPrompt"
+                type="textarea"
+                :rows="6"
+                :placeholder="$t('workflow.imagePromptPlaceholder')"
             />
           </el-form-item>
         </el-form>
         <template #footer>
           <el-button @click="promptDialogVisible = false">{{
-            $t("common.cancel")
-          }}</el-button>
+              $t("common.cancel")
+            }}</el-button>
           <el-button type="primary" @click="savePrompt">{{
-            $t("common.save")
-          }}</el-button>
+              $t("common.save")
+            }}</el-button>
         </template>
       </el-dialog>
 
       <!-- 角色库选择对话框 -->
       <el-dialog
-        v-model="libraryDialogVisible"
-        :title="$t('workflow.selectFromLibrary')"
-        width="800px"
+          v-model="libraryDialogVisible"
+          :title="$t('workflow.selectFromLibrary')"
+          width="800px"
       >
         <div class="library-grid">
           <div
-            v-for="item in libraryItems"
-            :key="item.id"
-            class="library-item"
-            @click="selectLibraryItem(item)"
+              v-for="item in libraryItems"
+              :key="item.id"
+              class="library-item"
+              @click="selectLibraryItem(item)"
           >
             <el-image :src="getImageUrl(item)" fit="cover" />
             <div class="library-item-name">{{ item.name }}</div>
@@ -969,23 +1018,23 @@
 
       <!-- AI模型配置对话框 -->
       <el-dialog
-        v-model="modelConfigDialogVisible"
-        :title="$t('workflow.aiModelConfig')"
-        width="600px"
-        :close-on-click-modal="false"
+          v-model="modelConfigDialogVisible"
+          :title="$t('workflow.aiModelConfig')"
+          width="600px"
+          :close-on-click-modal="false"
       >
         <el-form label-width="120px">
           <el-form-item :label="$t('workflow.textGenModel')">
             <el-select
-              v-model="selectedTextModel"
-              :placeholder="$t('workflow.selectTextModel')"
-              style="width: 100%"
+                v-model="selectedTextModel"
+                :placeholder="$t('workflow.selectTextModel')"
+                style="width: 100%"
             >
               <el-option
-                v-for="model in textModels"
-                :key="model.modelName"
-                :label="model.modelName"
-                :value="model.modelName"
+                  v-for="model in textModels"
+                  :key="model.modelName"
+                  :label="model.modelName"
+                  :value="model.modelName"
               />
             </el-select>
             <div class="model-tip">
@@ -995,15 +1044,15 @@
 
           <el-form-item :label="$t('workflow.imageGenModel')">
             <el-select
-              v-model="selectedImageModel"
-              :placeholder="$t('workflow.selectImageModel')"
-              style="width: 100%"
+                v-model="selectedImageModel"
+                :placeholder="$t('workflow.selectImageModel')"
+                style="width: 100%"
             >
               <el-option
-                v-for="model in imageModels"
-                :key="model.modelName"
-                :label="model.modelName"
-                :value="model.modelName"
+                  v-for="model in imageModels"
+                  :key="model.modelName"
+                  :label="model.modelName"
+                  :value="model.modelName"
               />
             </el-select>
             <div class="model-tip">
@@ -1014,29 +1063,29 @@
 
         <template #footer>
           <el-button @click="modelConfigDialogVisible = false">{{
-            $t("common.cancel")
-          }}</el-button>
+              $t("common.cancel")
+            }}</el-button>
           <el-button type="primary" @click="saveModelConfig">{{
-            $t("common.saveConfig")
-          }}</el-button>
+              $t("common.saveConfig")
+            }}</el-button>
         </template>
       </el-dialog>
 
       <!-- 图片上传对话框 -->
       <el-dialog
-        v-model="uploadDialogVisible"
-        :title="$t('tooltip.uploadImage')"
-        width="500px"
+          v-model="uploadDialogVisible"
+          :title="$t('tooltip.uploadImage')"
+          width="500px"
       >
         <el-upload
-          class="upload-area"
-          drag
-          :action="uploadAction"
-          :headers="uploadHeaders"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
-          :show-file-list="false"
-          accept="image/jpeg,image/png,image/jpg"
+            class="upload-area"
+            drag
+            :action="uploadAction"
+            :headers="uploadHeaders"
+            :on-success="handleUploadSuccess"
+            :on-error="handleUploadError"
+            :show-file-list="false"
+            accept="image/jpeg,image/png,image/jpg"
         >
           <el-icon class="el-icon--upload"><Upload /></el-icon>
           <div class="el-upload__text">
@@ -1053,29 +1102,29 @@
 
       <!-- 添加场景对话框 -->
       <el-dialog
-        v-model="addSceneDialogVisible"
-        :title="$t('workflow.addScene')"
-        width="600px"
+          v-model="addSceneDialogVisible"
+          :title="$t('workflow.addScene')"
+          width="600px"
       >
         <el-form :model="newScene" label-width="100px">
           <el-form-item :label="$t('workflow.sceneImage')">
             <el-upload
-              class="avatar-uploader"
-              :action="`/api/v1/upload/image`"
-              :show-file-list="false"
-              :on-success="handleSceneImageSuccess"
-              :before-upload="beforeAvatarUpload"
+                class="avatar-uploader"
+                :action="`/api/v1/upload/image`"
+                :show-file-list="false"
+                :on-success="handleSceneImageSuccess"
+                :before-upload="beforeAvatarUpload"
             >
               <img
-                v-if="hasImage(newScene)"
-                :src="getImageUrl(newScene)"
-                class="avatar"
-                style="width: 160px; height: 90px; object-fit: cover"
+                  v-if="hasImage(newScene)"
+                  :src="getImageUrl(newScene)"
+                  class="avatar"
+                  style="width: 160px; height: 90px; object-fit: cover"
               />
               <el-icon
-                v-else
-                class="avatar-uploader-icon"
-                style="
+                  v-else
+                  class="avatar-uploader-icon"
+                  style="
                   border: 1px dashed #d9d9d9;
                   border-radius: 6px;
                   cursor: pointer;
@@ -1088,46 +1137,46 @@
                   text-align: center;
                   line-height: 90px;
                 "
-                ><Plus
+              ><Plus
               /></el-icon>
             </el-upload>
           </el-form-item>
           <el-form-item :label="$t('workflow.sceneName')">
             <el-input
-              v-model="newScene.location"
-              :placeholder="$t('workflow.sceneNamePlaceholder')"
+                v-model="newScene.location"
+                :placeholder="$t('workflow.sceneNamePlaceholder')"
             />
           </el-form-item>
           <el-form-item :label="$t('workflow.time')">
             <el-input
-              v-model="newScene.time"
-              :placeholder="$t('workflow.timePlaceholder')"
+                v-model="newScene.time"
+                :placeholder="$t('workflow.timePlaceholder')"
             />
           </el-form-item>
           <el-form-item :label="$t('workflow.sceneDescription')">
             <el-input
-              v-model="newScene.prompt"
-              type="textarea"
-              :rows="4"
-              :placeholder="$t('workflow.sceneDescriptionPlaceholder')"
+                v-model="newScene.prompt"
+                type="textarea"
+                :rows="4"
+                :placeholder="$t('workflow.sceneDescriptionPlaceholder')"
             />
           </el-form-item>
         </el-form>
         <template #footer>
           <el-button @click="addSceneDialogVisible = false">{{
-            $t("common.cancel")
-          }}</el-button>
+              $t("common.cancel")
+            }}</el-button>
           <el-button type="primary" @click="saveScene">{{
-            $t("common.confirm")
-          }}</el-button>
+              $t("common.confirm")
+            }}</el-button>
         </template>
       </el-dialog>
 
       <!-- 从剧本提取场景对话框 -->
       <el-dialog
-        v-model="extractScenesDialogVisible"
-        :title="$t('workflow.extractSceneDialogTitle')"
-        width="500px"
+          v-model="extractScenesDialogVisible"
+          :title="$t('workflow.extractSceneDialogTitle')"
+          width="500px"
       >
         <el-alert type="info" :closable="false" style="margin-bottom: 16px">
           {{ $t("workflow.extractSceneDialogTip") }}
@@ -1137,9 +1186,9 @@
             {{ $t("common.cancel") }}
           </el-button>
           <el-button
-            type="primary"
-            @click="handleExtractScenes"
-            :loading="extractingScenes"
+              type="primary"
+              @click="handleExtractScenes"
+              :loading="extractingScenes"
           >
             {{ $t("workflow.startExtract") }}
           </el-button>
@@ -1194,7 +1243,7 @@ const drama = ref<Drama>();
 
 // 生成 localStorage key
 const getStepStorageKey = () =>
-  `episode_workflow_step_${dramaId}_${episodeNumber}`;
+    `episode_workflow_step_${dramaId}_${episodeNumber}`;
 
 // 从 localStorage 恢复步骤，如果没有则默认为 0
 const savedStep = localStorage.getItem(getStepStorageKey());
@@ -1257,7 +1306,7 @@ const selectedImageModel = ref<string>("");
 const hasScript = computed(() => {
   const currentEp = currentEpisode.value;
   return (
-    currentEp && currentEp.script_content && currentEp.script_content.length > 0
+      currentEp && currentEp.script_content && currentEp.script_content.length > 0
   );
 });
 
@@ -1268,8 +1317,8 @@ const currentEpisode = computed(() => {
 
 const hasCharacters = computed(() => {
   return (
-    currentEpisode.value?.characters &&
-    currentEpisode.value.characters.length > 0
+      currentEpisode.value?.characters &&
+      currentEpisode.value.characters.length > 0
   );
 });
 
@@ -1279,7 +1328,7 @@ const charactersCount = computed(() => {
 
 const hasExtractedData = computed(() => {
   const hasScenes =
-    currentEpisode.value?.scenes && currentEpisode.value.scenes.length > 0;
+      currentEpisode.value?.scenes && currentEpisode.value.scenes.length > 0;
   // 只要有角色或场景，就认为已经提取过数据
   return hasCharacters.value || hasScenes;
 });
@@ -1296,9 +1345,9 @@ const allImagesGenerated = computed(() => {
 
   // 检查所有有数据的项是否都已生成图片
   const allCharsHaveImages =
-    characters.length === 0 || characters.every((char) => char.image_url);
+      characters.length === 0 || characters.every((char) => char.image_url);
   const allScenesHaveImages =
-    scenes.length === 0 || scenes.every((scene) => scene.image_url);
+      scenes.length === 0 || scenes.every((scene) => scene.image_url);
 
   return allCharsHaveImages && allScenesHaveImages;
 });
@@ -1322,18 +1371,18 @@ const loadAIConfigs = async () => {
 
     // 展开模型列表并去重（保留优先级最高的）
     const allTextModels = activeTextList
-      .flatMap((config) => {
-        const models = Array.isArray(config.model)
-          ? config.model
-          : [config.model];
-        return models.map((modelName) => ({
-          modelName,
-          configName: config.name,
-          configId: config.id,
-          priority: config.priority || 0,
-        }));
-      })
-      .sort((a, b) => b.priority - a.priority);
+        .flatMap((config) => {
+          const models = Array.isArray(config.model)
+              ? config.model
+              : [config.model];
+          return models.map((modelName) => ({
+            modelName,
+            configName: config.name,
+            configId: config.id,
+            priority: config.priority || 0,
+          }));
+        })
+        .sort((a, b) => b.priority - a.priority);
 
     // 按模型名称去重，保留优先级最高的（已排序，第一个就是优先级最高的）
     const textModelMap = new Map<string, ModelOption>();
@@ -1345,18 +1394,18 @@ const loadAIConfigs = async () => {
     textModels.value = Array.from(textModelMap.values());
 
     const allImageModels = activeImageList
-      .flatMap((config) => {
-        const models = Array.isArray(config.model)
-          ? config.model
-          : [config.model];
-        return models.map((modelName) => ({
-          modelName,
-          configName: config.name,
-          configId: config.id,
-          priority: config.priority || 0,
-        }));
-      })
-      .sort((a, b) => b.priority - a.priority);
+        .flatMap((config) => {
+          const models = Array.isArray(config.model)
+              ? config.model
+              : [config.model];
+          return models.map((modelName) => ({
+            modelName,
+            configName: config.name,
+            configId: config.id,
+            priority: config.priority || 0,
+          }));
+        })
+        .sort((a, b) => b.priority - a.priority);
 
     // 按模型名称去重，保留优先级最高的
     const imageModelMap = new Map<string, ModelOption>();
@@ -1374,11 +1423,11 @@ const loadAIConfigs = async () => {
     if (imageModels.value.length > 0 && !selectedImageModel.value) {
       // 优先选择包含 nano 的模型
       const nanoModel = imageModels.value.find((m) =>
-        m.modelName.toLowerCase().includes("nano"),
+          m.modelName.toLowerCase().includes("nano"),
       );
       selectedImageModel.value = nanoModel
-        ? nanoModel.modelName
-        : imageModels.value[0].modelName;
+          ? nanoModel.modelName
+          : imageModels.value[0].modelName;
     }
 
     // 验证已选择的模型是否还在可用列表中，如果不在则重置为默认值
@@ -1386,45 +1435,45 @@ const loadAIConfigs = async () => {
     const availableImageModelNames = imageModels.value.map((m) => m.modelName);
 
     if (
-      selectedTextModel.value &&
-      !availableTextModelNames.includes(selectedTextModel.value)
+        selectedTextModel.value &&
+        !availableTextModelNames.includes(selectedTextModel.value)
     ) {
       console.warn(
-        `已选择的文本模型 ${selectedTextModel.value} 不在可用列表中，重置为默认值`,
+          `已选择的文本模型 ${selectedTextModel.value} 不在可用列表中，重置为默认值`,
       );
       selectedTextModel.value =
-        textModels.value.length > 0 ? textModels.value[0].modelName : "";
+          textModels.value.length > 0 ? textModels.value[0].modelName : "";
       // 更新 localStorage
       if (selectedTextModel.value) {
         localStorage.setItem(
-          `ai_text_model_${dramaId}`,
-          selectedTextModel.value,
+            `ai_text_model_${dramaId}`,
+            selectedTextModel.value,
         );
       }
     }
 
     if (
-      selectedImageModel.value &&
-      !availableImageModelNames.includes(selectedImageModel.value)
+        selectedImageModel.value &&
+        !availableImageModelNames.includes(selectedImageModel.value)
     ) {
       console.warn(
-        `已选择的图片模型 ${selectedImageModel.value} 不在可用列表中，重置为默认值`,
+          `已选择的图片模型 ${selectedImageModel.value} 不在可用列表中，重置为默认值`,
       );
       // 优先选择包含 nano 的模型
       const nanoModel = imageModels.value.find((m) =>
-        m.modelName.toLowerCase().includes("nano"),
+          m.modelName.toLowerCase().includes("nano"),
       );
       selectedImageModel.value =
-        imageModels.value.length > 0
-          ? nanoModel
-            ? nanoModel.modelName
-            : imageModels.value[0].modelName
-          : "";
+          imageModels.value.length > 0
+              ? nanoModel
+                  ? nanoModel.modelName
+                  : imageModels.value[0].modelName
+              : "";
       // 更新 localStorage
       if (selectedImageModel.value) {
         localStorage.setItem(
-          `ai_image_model_${dramaId}`,
-          selectedImageModel.value,
+            `ai_image_model_${dramaId}`,
+            selectedImageModel.value,
         );
       }
     }
@@ -1504,8 +1553,8 @@ const checkAndStartPolling = async () => {
   // 检查角色的生成状态
   for (const char of currentEpisode.value.characters || []) {
     if (
-      char.image_generation_status === "pending" ||
-      char.image_generation_status === "processing"
+        char.image_generation_status === "pending" ||
+        char.image_generation_status === "processing"
     ) {
       // 查找对应的image_generation记录
       try {
@@ -1516,9 +1565,9 @@ const checkAndStartPolling = async () => {
 
         // 找到这个角色的image_generation记录
         const charImageGen = imageGenList.items.find(
-          (img) =>
-            img.character_id === char.id &&
-            (img.status === "pending" || img.status === "processing"),
+            (img) =>
+                img.character_id === char.id &&
+                (img.status === "pending" || img.status === "processing"),
         );
 
         if (charImageGen) {
@@ -1540,8 +1589,8 @@ const checkAndStartPolling = async () => {
   // 检查场景的生成状态
   for (const scene of currentEpisode.value.scenes || []) {
     if (
-      scene.image_generation_status === "pending" ||
-      scene.image_generation_status === "processing"
+        scene.image_generation_status === "pending" ||
+        scene.image_generation_status === "processing"
     ) {
       // 查找对应的image_generation记录
       try {
@@ -1552,9 +1601,9 @@ const checkAndStartPolling = async () => {
 
         // 找到这个场景的image_generation记录
         const sceneImageGen = imageGenList.items.find(
-          (img) =>
-            img.scene_id === scene.id &&
-            (img.status === "pending" || img.status === "processing"),
+            (img) =>
+                img.scene_id === scene.id &&
+                (img.status === "pending" || img.status === "processing"),
         );
 
         if (sceneImageGen) {
@@ -1580,7 +1629,7 @@ const saveChapterScript = async () => {
 
     // 查找当前章节
     const episodeIndex = existingEpisodes.findIndex(
-      (ep) => ep.episode_number === episodeNumber,
+        (ep) => ep.episode_number === episodeNumber,
     );
 
     let updatedEpisodes;
@@ -1613,20 +1662,19 @@ const editCurrentEpisodeScript = () => {
   scriptContent.value = currentEpisode.value?.script_content || "";
 };
 
-// 处理提取角色和场景
 const handleExtractCharactersAndBackgrounds = async () => {
   // 如果已经提取过，显示确认对话框
   if (hasExtractedData.value) {
     try {
       await ElMessageBox.confirm(
-        '重新提取将覆盖已提取的角色和场景（包括已生成的图片），确定继续吗？',
-        '重新提取角色和场景',
-        {
-          confirmButtonText: $t("common.confirm"),
-          cancelButtonText: $t("common.cancel"),
-          type: "warning",
-          distinguishCancelAndClose: true,
-        },
+          $t("workflow.reExtractConfirmMessage"),
+          $t("workflow.reExtractConfirmTitle"),
+          {
+            confirmButtonText: $t("common.confirm"),
+            cancelButtonText: $t("common.cancel"),
+            type: "warning",
+            distinguishCancelAndClose: true,
+          },
       );
     } catch {
       ElMessage.info($t("workflow.extractCancelled"));
@@ -1644,8 +1692,8 @@ const handleExtractCharactersAndBackgrounds = async () => {
 
 // 轮询检查图片生成状态
 const pollImageStatus = async (
-  imageGenId: number,
-  onComplete: () => Promise<void>,
+    imageGenId: number,
+    onComplete: () => Promise<void>,
 ) => {
   const maxAttempts = 100; // 最多轮询100次
   const pollInterval = 6000; // 每6秒轮询一次
@@ -1697,8 +1745,8 @@ const extractCharactersAndBackgrounds = async () => {
         model: selectedTextModel.value, // 传递用户选择的文本模型
       }),
       dramaAPI.extractBackgrounds(
-        episodeId.toString(),
-        selectedTextModel.value,
+          episodeId.toString(),
+          selectedTextModel.value,
       ), // 传递用户选择的文本模型
     ]);
 
@@ -1719,9 +1767,9 @@ const extractCharactersAndBackgrounds = async () => {
     const errorMsg = errorData?.message || error.message || "提取失败";
 
     if (
-      errorMsg.includes("no config found") ||
-      errorMsg.includes("AI client") ||
-      errorMsg.includes("failed to get AI client")
+        errorMsg.includes("no config found") ||
+        errorMsg.includes("AI client") ||
+        errorMsg.includes("failed to get AI client")
     ) {
       ElMessage({
         type: "warning",
@@ -1739,8 +1787,8 @@ const extractCharactersAndBackgrounds = async () => {
 
 // 轮询提取任务状态
 const pollExtractTask = async (
-  taskId: string,
-  type: "character" | "background",
+    taskId: string,
+    type: "character" | "background",
 ) => {
   const maxAttempts = 60; // 最多轮询60次（2分钟）
   const interval = 2000; // 每2秒查询一次
@@ -1756,14 +1804,14 @@ const pollExtractTask = async (
         if (type === "character" && task.result) {
           // 解析角色数据并保存
           const result =
-            typeof task.result === "string"
-              ? JSON.parse(task.result)
-              : task.result;
+              typeof task.result === "string"
+                  ? JSON.parse(task.result)
+                  : task.result;
           if (result.characters && result.characters.length > 0) {
             await dramaAPI.saveCharacters(
-              dramaId,
-              result.characters,
-              currentEpisode.value?.id,
+                dramaId,
+                result.characters,
+                currentEpisode.value?.id,
             );
           }
         }
@@ -1771,10 +1819,10 @@ const pollExtractTask = async (
       } else if (task.status === "failed") {
         // 任务失败
         throw new Error(
-          task.error ||
+            task.error ||
             (type === "character"
-              ? $t("workflow.characterGenerationFailed")
-              : $t("workflow.sceneExtractionFailed")),
+                ? $t("workflow.characterGenerationFailed")
+                : $t("workflow.sceneExtractionFailed")),
         );
       }
       // 否则继续轮询
@@ -1785,9 +1833,9 @@ const pollExtractTask = async (
   }
 
   throw new Error(
-    type === "character"
-      ? $t("workflow.characterGenerationTimeout")
-      : $t("workflow.sceneExtractionTimeout"),
+      type === "character"
+          ? $t("workflow.characterGenerationTimeout")
+          : $t("workflow.sceneExtractionTimeout"),
   );
 };
 
@@ -1798,8 +1846,8 @@ const generateCharacterImage = async (characterId: number) => {
     // 获取用户选择的图片生成模型
     const model = selectedImageModel.value || undefined;
     const response = await characterLibraryAPI.generateCharacterImage(
-      characterId.toString(),
-      model,
+        characterId.toString(),
+        model,
     );
     const imageGenId = response.image_generation?.id;
 
@@ -1824,7 +1872,7 @@ const generateCharacterImage = async (characterId: number) => {
 const toggleSelectAllCharacters = () => {
   if (selectAllCharacters.value) {
     selectedCharacterIds.value =
-      currentEpisode.value?.characters?.map((char) => char.id) || [];
+        currentEpisode.value?.characters?.map((char) => char.id) || [];
   } else {
     selectedCharacterIds.value = [];
   }
@@ -1833,7 +1881,7 @@ const toggleSelectAllCharacters = () => {
 const toggleSelectAllScenes = () => {
   if (selectAllScenes.value) {
     selectedSceneIds.value =
-      currentEpisode.value?.scenes?.map((scene) => scene.id) || [];
+        currentEpisode.value?.scenes?.map((scene) => scene.id) || [];
   } else {
     selectedSceneIds.value = [];
   }
@@ -1852,8 +1900,8 @@ const batchGenerateCharacterImages = async () => {
 
     // 使用批量生成API
     await characterLibraryAPI.batchGenerateCharacterImages(
-      selectedCharacterIds.value.map((id) => id.toString()),
-      model,
+        selectedCharacterIds.value.map((id) => id.toString()),
+        model,
     );
 
     ElMessage.success($t("workflow.batchTaskSubmitted"));
@@ -1904,7 +1952,7 @@ const batchGenerateSceneImages = async () => {
   batchGeneratingScenes.value = true;
   try {
     const promises = selectedSceneIds.value.map((sceneId) =>
-      generateSceneImage(sceneId.toString()),
+        generateSceneImage(sceneId.toString()),
     );
     const results = await Promise.allSettled(promises);
 
@@ -1913,14 +1961,14 @@ const batchGenerateSceneImages = async () => {
 
     if (failCount === 0) {
       ElMessage.success(
-        $t("workflow.batchCompleteSuccess", { count: successCount }),
+          $t("workflow.batchCompleteSuccess", { count: successCount }),
       );
     } else {
       ElMessage.warning(
-        $t("workflow.batchCompletePartial", {
-          success: successCount,
-          fail: failCount,
-        }),
+          $t("workflow.batchCompletePartial", {
+            success: successCount,
+            fail: failCount,
+          }),
       );
     }
   } catch (error: any) {
@@ -1957,18 +2005,18 @@ const generateShots = async () => {
       title: currentEpisode.value?.title,
     });
     console.log(
-      "所有剧集列表:",
-      drama.value?.episodes?.map((ep) => ({
-        id: ep.id,
-        episode_number: ep.episode_number,
-        title: ep.title,
-      })),
+        "所有剧集列表:",
+        drama.value?.episodes?.map((ep) => ({
+          id: ep.id,
+          episode_number: ep.episode_number,
+          title: ep.title,
+        })),
     );
 
     // 创建异步任务
     const response = await generationAPI.generateStoryboard(
-      episodeId,
-      selectedTextModel.value,
+        episodeId,
+        selectedTextModel.value,
     );
 
     taskMessage.value = response.message || "任务已创建";
@@ -2061,8 +2109,8 @@ const saveShotEdit = async () => {
 
     // 调用API更新镜头
     await dramaAPI.updateStoryboard(
-      editingShot.value.id.toString(),
-      editingShot.value,
+        editingShot.value.id.toString(),
+        editingShot.value,
     );
 
     // 更新本地数据
@@ -2142,13 +2190,13 @@ const addToCharacterLibrary = async (character: any) => {
 
   try {
     await ElMessageBox.confirm(
-      $t("workflow.addToLibraryConfirm", { name: character.name }),
-      $t("workflow.addToLibrary"),
-      {
-        confirmButtonText: $t("common.confirm"),
-        cancelButtonText: $t("common.cancel"),
-        type: "info",
-      },
+        $t("workflow.addToLibraryConfirm", { name: character.name }),
+        $t("workflow.addToLibrary"),
+        {
+          confirmButtonText: $t("common.confirm"),
+          cancelButtonText: $t("common.cancel"),
+          type: "info",
+        },
     );
 
     await characterLibraryAPI.addCharacterToLibrary(character.id.toString());
@@ -2164,8 +2212,8 @@ const selectLibraryItem = async (item: any) => {
   try {
     if (currentUploadTarget.value?.type === "character") {
       await characterLibraryAPI.applyFromLibrary(
-        currentUploadTarget.value.id.toString(),
-        item.id,
+          currentUploadTarget.value.id.toString(),
+          item.id,
       );
       ElMessage.success("应用角色形象成功！");
       await loadDramaData();
@@ -2188,11 +2236,11 @@ const handleUploadSuccess = async (response: any) => {
 
     if (currentUploadTarget.value?.type === "character") {
       await characterLibraryAPI.updateCharacter(
-        currentUploadTarget.value.id.toString(),
-        {
-          image_url: imageUrl,
-          local_path: localPath,
-        },
+          currentUploadTarget.value.id.toString(),
+          {
+            image_url: imageUrl,
+            local_path: localPath,
+          },
       );
       ElMessage.success("上传成功！");
     } else if (currentUploadTarget.value?.type === "scene") {
@@ -2218,21 +2266,21 @@ const handleUploadError = () => {
 const deleteCharacter = async (characterId: number) => {
   try {
     await ElMessageBox.confirm(
-      '确定要删除该角色吗？删除后将无法恢复。',
-      '删除确认',
-      {
-        type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消'
-      }
-    )
+        $t("workflow.deleteCharacterConfirm"),
+        $t("workflow.deleteConfirmTitle"),
+        {
+          type: "warning",
+          confirmButtonText: $t("workflow.confirmButtonText"),
+          cancelButtonText: $t("workflow.cancelButtonText"),
+        },
+    );
 
     await characterLibraryAPI.deleteCharacter(characterId);
     ElMessage.success("角色已删除");
     await loadDramaData();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.message || '删除失败')
+    if (error !== "cancel") {
+      ElMessage.error(error.message || "删除失败");
     }
   }
 };
