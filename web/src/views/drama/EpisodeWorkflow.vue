@@ -1739,7 +1739,7 @@ const extractCharactersAndBackgrounds = async () => {
     const [characterTask, backgroundTask] = await Promise.all([
       generationAPI.generateCharacters({
         drama_id: dramaId.toString(),
-        episode_id: episodeId,
+        episode_id: Number(episodeId),
         outline: currentEpisode.value.script_content || "",
         count: 0,
         model: selectedTextModel.value, // 传递用户选择的文本模型
@@ -1849,9 +1849,14 @@ const generateCharacterImage = async (characterId: number) => {
         characterId.toString(),
         model,
     );
-    const imageGenId = response.image_generation?.id;
-
-    if (imageGenId) {
+    // 如果返回包含 image_url，说明是直接返回图片地址
+    if (response.image_url) {
+      ElMessage.success("角色图片生成完成！");
+      await loadDramaData();
+    } 
+    // 如果返回包含 image_generation，说明是异步任务
+    else if ((response as any).image_generation?.id) {
+      const imageGenId = (response as any).image_generation.id;
       ElMessage.info("角色图片生成中，请稍候...");
       // 轮询检查生成状态
       await pollImageStatus(imageGenId, async () => {
@@ -1871,8 +1876,7 @@ const generateCharacterImage = async (characterId: number) => {
 
 const toggleSelectAllCharacters = () => {
   if (selectAllCharacters.value) {
-    selectedCharacterIds.value =
-        currentEpisode.value?.characters?.map((char) => char.id) || [];
+    selectedCharacterIds.value = currentEpisode.value?.characters?.map((char) => char.id) || [];
   } else {
     selectedCharacterIds.value = [];
   }
@@ -1880,8 +1884,7 @@ const toggleSelectAllCharacters = () => {
 
 const toggleSelectAllScenes = () => {
   if (selectAllScenes.value) {
-    selectedSceneIds.value =
-        currentEpisode.value?.scenes?.map((scene) => scene.id) || [];
+    selectedSceneIds.value = currentEpisode.value?.scenes?.map((scene) => Number(scene.id)) || [];
   } else {
     selectedSceneIds.value = [];
   }
