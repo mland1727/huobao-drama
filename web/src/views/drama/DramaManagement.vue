@@ -6,12 +6,12 @@
         <template #left>
           <el-button text @click="$router.back()" class="back-btn">
             <el-icon><ArrowLeft /></el-icon>
-            <span>{{ $t("common.back") }}</span>
+            <span>返回</span>
           </el-button>
           <div class="page-title">
             <h1>{{ drama?.title || "" }}</h1>
             <span class="subtitle">{{
-              drama?.description || $t("drama.management.overview")
+              drama?.description || "项目概览"
             }}</span>
           </div>
         </template>
@@ -21,66 +21,21 @@
       <div class="tabs-wrapper">
         <el-tabs v-model="activeTab" class="management-tabs">
           <!-- 项目概览 -->
-          <el-tab-pane :label="$t('drama.management.overview')" name="overview">
+          <el-tab-pane label="项目概览" name="overview">
             <div class="stats-grid">
-              <StatCard
-                :label="$t('drama.management.episodeStats')"
-                :value="episodesCount"
-                :icon="Document"
-                icon-color="var(--accent)"
-                icon-bg="var(--accent-light)"
-                value-color="var(--accent)"
-                :description="$t('drama.management.episodesCreated')"
-              />
-              <StatCard
-                :label="$t('drama.management.characterStats')"
-                :value="charactersCount"
-                :icon="User"
-                icon-color="var(--success)"
-                icon-bg="var(--success-light)"
-                value-color="var(--success)"
-                :description="$t('drama.management.charactersCreated')"
-              />
-              <StatCard
-                :label="$t('drama.management.sceneStats')"
-                :value="scenesCount"
-                :icon="Picture"
-                icon-color="var(--warning)"
-                icon-bg="var(--warning-light)"
-                value-color="var(--warning)"
-                :description="$t('drama.management.sceneLibraryCount')"
-              />
-              <StatCard
-                :label="$t('drama.management.propStats')"
-                :value="propsCount"
-                :icon="Box"
-                icon-color="var(--primary)"
-                icon-bg="var(--primary-light)"
-                value-color="var(--primary)"
-                :description="$t('drama.management.propsCreated')"
-              />
+              <StatCard label="章节统计" :value="episodesCount" :icon="Document" icon-color="var(--accent)" icon-bg="var(--accent-light)" value-color="var(--accent)" description="已创建章节数" />
+              <StatCard label="角色统计" :value="charactersCount" :icon="User" icon-color="var(--success)" icon-bg="var(--success-light)" value-color="var(--success)" description="已创建角色数" />
+              <StatCard label="场景统计" :value="scenesCount" :icon="Picture" icon-color="var(--warning)" icon-bg="var(--warning-light)" value-color="var(--warning)" description="场景库数量" />
+              <StatCard label="道具统计" :value="propsCount" :icon="Box" icon-color="var(--primary)" icon-bg="var(--primary-light)" value-color="var(--primary)" description="已创建道具数" />
             </div>
 
             <!-- 引导卡片：无章节时显示 -->
-            <el-alert
-              v-if="episodesCount === 0"
-              :title="$t('drama.management.startFirstEpisode')"
-              type="info"
-              :closable="false"
-              style="margin-top: 20px"
-            >
+            <el-alert v-if="episodesCount === 0" title="开始创作您的第一个章节！" type="info" :closable="false" style="margin-top: 20px" >
               <template #default>
                 <p style="margin: 8px 0">
-                  {{ $t("drama.management.noEpisodesYet") }}
+                  开始创作您的第一个章节！
                 </p>
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  @click="createNewEpisode"
-                  style="margin-top: 8px"
-                >
-                  {{ $t("drama.management.createFirstEpisode") }}
-                </el-button>
+                <el-button type="primary" :icon="Plus" @click="createNewEpisode" style="margin-top: 8px" >创建第一个章节</el-button>
               </template>
             </el-alert>
 
@@ -88,7 +43,7 @@
               <template #header>
                 <div class="card-header">
                   <h3 class="card-title">
-                    {{ $t("drama.management.projectInfo") }}
+                    项目信息
                   </h3>
                   <el-tag :type="getStatusType(drama?.status)" size="small">{{
                     getStatusText(drama?.status)
@@ -96,37 +51,28 @@
                 </div>
               </template>
               <el-descriptions :column="2" border class="project-descriptions">
-                <el-descriptions-item
-                  :label="$t('drama.management.projectName')"
-                >
+                <el-descriptions-item label="项目名称" >
                   <span class="info-value">{{ drama?.title }}</span>
                 </el-descriptions-item>
-                <el-descriptions-item :label="$t('common.createdAt')">
-                  <span class="info-value">{{
-                    formatDate(drama?.created_at)
-                  }}</span>
+                <el-descriptions-item label="创建时间">
+                  <span class="info-value">{{ formatDate(drama?.created_at) }}</span>
                 </el-descriptions-item>
-                <el-descriptions-item
-                  :label="$t('drama.management.projectDesc')"
-                  :span="2"
-                >
-                  <span class="info-desc">{{
-                    drama?.description || $t("drama.management.noDescription")
-                  }}</span>
+                <el-descriptions-item label="项目描述" :span="2" >
+                  <span class="info-desc">{{ drama?.description || "暂无描述"}}</span>
                 </el-descriptions-item>
               </el-descriptions>
             </el-card>
           </el-tab-pane>
 
           <!-- 章节管理 -->
-          <el-tab-pane :label="$t('drama.management.episodes')" name="episodes">
+          <el-tab-pane label="章节管理" name="episodes">
             <div class="tab-header">
-              <h2>{{ $t("drama.management.episodeList") }}</h2>
+              <h2>章节列表</h2>
               <el-button
                 type="primary"
                 :icon="Plus"
                 @click="createNewEpisode"
-                >{{ $t("drama.management.createNewEpisode") }}</el-button
+                >创建新章节</el-button
               >
             </div>
 
@@ -184,19 +130,11 @@
                 fixed="right"
               >
                 <template #default="{ row }">
-                  <el-button
-                    size="small"
-                    type="primary"
-                    @click="enterEpisodeWorkflow(row)"
-                  >
-                    {{ $t("drama.management.goToEdit") }}
+                  <el-button size="small" type="primary" @click="enterEpisodeWorkflow(row)" >
+                    进入编辑
                   </el-button>
-                  <el-button
-                    size="small"
-                    type="danger"
-                    @click="deleteEpisode(row)"
-                  >
-                    {{ $t("common.delete") }}
+                  <el-button size="small" type="danger" @click="deleteEpisode(row)" >
+                    删除
                   </el-button>
                 </template>
               </el-table-column>
@@ -209,55 +147,28 @@
             name="characters"
           >
             <div class="tab-header">
-              <h2>{{ $t("drama.management.characterList") }}</h2>
+              <h2>角色列表</h2>
               <div style="display: flex; gap: 10px">
-                <el-button
-                  :icon="Document"
-                  @click="openExtractCharacterDialog"
-                  >{{ $t("prop.extract") }}</el-button
-                >
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  @click="openAddCharacterDialog"
-                  >{{ $t("character.add") }}</el-button
-                >
+                <el-button :icon="Document" @click="openExtractCharacterDialog" >从剧本提取</el-button>
+                <el-button type="primary" :icon="Plus" @click="openAddCharacterDialog" >添加角色</el-button>
               </div>
             </div>
 
             <el-row :gutter="16" style="margin-top: 16px">
-              <el-col
-                :span="6"
-                v-for="character in drama?.characters"
-                :key="character.id"
-              >
+              <el-col :span="6" v-for="character in drama?.characters" :key="character.id">
                 <el-card shadow="hover" class="character-card">
                   <div class="character-preview">
-                    <ImagePreview
-                      v-if="character.local_path || character.image_url"
-                      :image-url="getImageUrl(character)"
-                      :alt="character.name"
-                      :size="120"
-                    />
-                    <el-avatar v-else :size="120">{{
-                      character.name[0]
-                    }}</el-avatar>
+                    <ImagePreview v-if="character.local_path || character.image_url" 
+                      :image-url="getImageUrl(character)" 
+                      :alt="character.name" :size="120" />
+                    <el-avatar v-else :size="120">{{ character.name[0] }}</el-avatar> 
                   </div>
 
                   <div class="character-info">
                     <div class="character-name">
                       <h4>{{ character.name }}</h4>
-                      <el-tag
-                        :type="character.role === 'main' ? 'danger' : 'info'"
-                        size="small"
-                      >
-                        {{
-                          character.role === "main"
-                            ? "Main"
-                            : character.role === "supporting"
-                              ? "Supporting"
-                              : "Minor"
-                        }}
+                      <el-tag :type="character.role === 'main' ? 'danger' : 'info'" size="small" >
+                        {{ getRoleTypeName(character.role) }}
                       </el-tag>
                     </div>
                     <p class="desc">
@@ -266,20 +177,9 @@
                   </div>
 
                   <div class="character-actions">
-                    <el-button size="small" @click="editCharacter(character)">{{
-                      $t("common.edit")
-                    }}</el-button>
-                    <el-button
-                      size="small"
-                      @click="generateCharacterImage(character)"
-                      >{{ $t("prop.generateImage") }}</el-button
-                    >
-                    <el-button
-                      size="small"
-                      type="danger"
-                      @click="deleteCharacter(character)"
-                      >{{ $t("common.delete") }}</el-button
-                    >
+                    <el-button size="small" @click="editCharacter(character)">编辑</el-button>
+                    <el-button size="small" @click="generateCharacterImage(character)" >生成图片</el-button>
+                    <el-button size="small" type="danger" @click="deleteCharacter(character)">删除</el-button>
                   </div>
                 </el-card>
               </el-col>
@@ -315,19 +215,17 @@
                   </div>
 
                   <div class="scene-actions">
-                    <el-button size="small" @click="editScene(scene)">{{
-                      $t("common.edit")
-                    }}</el-button>
+                    <el-button size="small" @click="editScene(scene)">编辑</el-button>
                     <el-button
                       size="small"
                       @click="generateSceneImage(scene)"
-                      >{{ $t("prop.generateImage") }}</el-button
+                      >生成图片</el-button
                     >
                     <el-button
                       size="small"
                       type="danger"
                       @click="deleteScene(scene)"
-                      >{{ $t("common.delete") }}</el-button
+                      >删除</el-button
                     >
                   </div>
                 </el-card>
@@ -341,18 +239,16 @@
           </el-tab-pane>
 
           <!-- 道具管理 -->
-          <el-tab-pane :label="$t('drama.management.propList')" name="props">
+          <el-tab-pane label="道具列表" name="props">
             <div class="tab-header">
-              <h2>{{ $t("drama.management.propList") }}</h2>
+              <h2>道具列表</h2>
               <div style="display: flex; gap: 10px">
-                <el-button :icon="Document" @click="openExtractDialog">{{
-                  $t("prop.extract")
-                }}</el-button>
+                <el-button :icon="Document" @click="openExtractDialog">提取</el-button>
                 <el-button
                   type="primary"
                   :icon="Plus"
                   @click="openAddPropDialog"
-                  >{{ $t("common.add") }}</el-button
+                  >添加</el-button
                 >
               </div>
             </div>
@@ -378,20 +274,18 @@
                   </div>
 
                   <div class="scene-actions">
-                    <el-button size="small" @click="editProp(prop)">{{
-                      $t("common.edit")
-                    }}</el-button>
+                    <el-button size="small" @click="editProp(prop)">编辑</el-button>
                     <el-button
                       size="small"
                       @click="generatePropImage(prop)"
                       :disabled="!prop.prompt"
-                      >{{ $t("prop.generateImage") }}</el-button
+                      >生成图片</el-button
                     >
                     <el-button
                       size="small"
                       type="danger"
                       @click="deleteProp(prop)"
-                      >{{ $t("common.delete") }}</el-button
+                      >删除</el-button
                     >
                   </div>
                 </el-card>
@@ -400,7 +294,7 @@
 
             <el-empty
               v-if="!drama?.props || drama.props.length === 0"
-              :description="$t('drama.management.noProps')"
+              description="暂无道具"
             />
           </el-tab-pane>
         </el-tabs>
@@ -790,6 +684,7 @@ import {
   ImagePreview,
 } from "@/components/common";
 import { getImageUrl, hasImage } from "@/utils/image";
+import { getRoleTypeName } from "@/utils/tool";
 
 const router = useRouter();
 const route = useRoute();
@@ -1007,6 +902,7 @@ const openAddCharacterDialog = () => {
     personality: "",
     description: "",
     image_url: "",
+    local_path: "",
   };
   addCharacterDialogVisible.value = true;
 };
@@ -1025,6 +921,10 @@ const handleSceneImageSuccess = (response: any) => {
   }
 };
 
+/**
+ * 上传校验
+ * @param file 
+ */
 const beforeAvatarUpload = (file: any) => {
   const isImage = file.type.startsWith("image/");
   const isLt10M = file.size / 1024 / 1024 < 10;
@@ -1038,20 +938,39 @@ const beforeAvatarUpload = (file: any) => {
   return isImage && isLt10M;
 };
 
+/**
+ * 生成角色图片
+ * @param character 
+ */
 const generateCharacterImage = async (character: any) => {
   try {
+    await ElMessageBox.confirm(
+      `确定要为角色"${character.name}"生成图片吗？`,
+      "生成确认",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "info",
+      },
+    );
+
     await characterLibraryAPI.generateCharacterImage(character.id);
     ElMessage.success("图片生成任务已提交");
     startPolling(loadDramaData);
   } catch (error: any) {
-    ElMessage.error(error.message || "生成失败");
+    if (error !== "cancel") {
+      ElMessage.error(error.message || "生成失败");
+    }
   }
 };
 
+/**
+ * 提取角色
+ */
 const openExtractCharacterDialog = () => {
   extractCharactersDialogVisible.value = true;
   if (sortedEpisodes.value.length > 0 && !selectedExtractEpisodeId.value) {
-    selectedExtractEpisodeId.value = sortedEpisodes.value[0].id;
+    selectedExtractEpisodeId.value = Number(sortedEpisodes.value[0].id);
   }
 };
 
@@ -1089,7 +1008,7 @@ const generateSceneImage = async (scene: any) => {
 const openExtractSceneDialog = () => {
   extractScenesDialogVisible.value = true;
   if (sortedEpisodes.value.length > 0 && !selectedExtractEpisodeId.value) {
-    selectedExtractEpisodeId.value = sortedEpisodes.value[0].id;
+    selectedExtractEpisodeId.value = Number(sortedEpisodes.value[0].id);
   }
 };
 
@@ -1207,6 +1126,7 @@ const openAddSceneDialog = () => {
     location: "",
     prompt: "",
     image_url: "",
+    local_path: "",
   };
   addSceneDialogVisible.value = true;
 };
@@ -1265,7 +1185,7 @@ const saveScene = async () => {
     } else {
       // Create new scene
       await dramaAPI.createScene({
-        drama_id: drama.value!.id,
+        drama_id: Number(drama.value!.id),
         location: newScene.value.location,
         prompt: newScene.value.prompt,
         description: newScene.value.prompt,
@@ -1427,7 +1347,7 @@ const handlePropImageSuccess = (response: any) => {
 const openExtractDialog = () => {
   extractPropsDialogVisible.value = true;
   if (sortedEpisodes.value.length > 0 && !selectedExtractEpisodeId.value) {
-    selectedExtractEpisodeId.value = sortedEpisodes.value[0].id;
+    selectedExtractEpisodeId.value = Number(sortedEpisodes.value[0].id);
   }
 };
 
@@ -1446,7 +1366,7 @@ const handleExtractProps = async () => {
       if (checkCount > 10) clearInterval(checkInterval);
     }, 5000);
   } catch (error: any) {
-    ElMessage.error(error.message || t("common.failed"));
+    ElMessage.error(error.message || "失败");
   }
 };
 
