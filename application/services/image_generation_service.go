@@ -493,19 +493,19 @@ func (s *ImageGenerationService) updateImageGenError(imageGenID uint, errorMsg s
 }
 
 func (s *ImageGenerationService) getImageClient(provider string) (image.ImageClient, error) {
-	config, err := s.aiService.GetDefaultConfig("image")
+	defaultConfig, err := s.aiService.GetDefaultConfig("image")
 	if err != nil {
 		return nil, fmt.Errorf("未找到图片AI配置: %w", err)
 	}
 
 	// 使用第一个模型
 	model := ""
-	if len(config.Model) > 0 {
-		model = config.Model[0]
+	if len(defaultConfig.Model) > 0 {
+		model = defaultConfig.Model[0]
 	}
 
 	// 使用配置中的 provider，如果没有则使用传入的 provider
-	actualProvider := config.Provider
+	actualProvider := defaultConfig.Provider
 	if actualProvider == "" {
 		actualProvider = provider
 	}
@@ -516,22 +516,22 @@ func (s *ImageGenerationService) getImageClient(provider string) (image.ImageCli
 	switch actualProvider {
 	case "openai", "dalle":
 		endpoint = "/images/generations"
-		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewOpenAIImageClient(defaultConfig.BaseURL, defaultConfig.APIKey, model, endpoint), nil
 	case "chatfire":
 		endpoint = "/images/generations"
-		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewOpenAIImageClient(defaultConfig.BaseURL, defaultConfig.APIKey, model, endpoint), nil
 	case "volcengine", "volces", "doubao":
 		endpoint = "/images/generations"
-		return image.NewVolcengineImageClient(config.BaseURL, config.APIKey, model), nil
+		return image.NewVolcengineImageClient(defaultConfig.BaseURL, defaultConfig.APIKey, model), nil
 	case "gemini", "google":
 		endpoint = "/v1beta/models/{model}:generateContent"
-		return image.NewGeminiImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewGeminiImageClient(defaultConfig.BaseURL, defaultConfig.APIKey, model, endpoint), nil
 	case "vidu":
 		endpoint = "/reference2image"
-		return image.NewViduImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewViduImageClient(defaultConfig.BaseURL, defaultConfig.APIKey, model, endpoint), nil
 	default:
 		endpoint = "/images/generations"
-		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewOpenAIImageClient(defaultConfig.BaseURL, defaultConfig.APIKey, model, endpoint), nil
 	}
 }
 
@@ -1112,9 +1112,9 @@ func (s *ImageGenerationService) extractBackgroundsWithAI(storyboards []models.S
 		if storyboard.Location != nil {
 			location = *storyboard.Location
 		}
-		time := ""
+		storyboardTime := ""
 		if storyboard.Time != nil {
-			time = *storyboard.Time
+			storyboardTime = *storyboard.Time
 		}
 		action := ""
 		if storyboard.Action != nil {
@@ -1126,7 +1126,7 @@ func (s *ImageGenerationService) extractBackgroundsWithAI(storyboards []models.S
 		}
 
 		scenesText += fmt.Sprintf("镜头%d:\n地点: %s\n时间: %s\n动作: %s\n描述: %s\n\n",
-			storyboard.StoryboardNumber, location, time, action, description)
+			storyboard.StoryboardNumber, location, storyboardTime, action, description)
 	}
 
 	// 使用国际化提示词
