@@ -537,22 +537,22 @@ func (s *ImageGenerationService) getImageClient(provider string) (image.ImageCli
 
 // getImageClientWithModel 根据模型名称获取图片生成客户端
 func (s *ImageGenerationService) getImageClientWithModel(provider string, modelName string) (image.ImageClient, error) {
-	var config *models.AIServiceConfig
+	var serviceConfig *models.AIServiceConfig
 	var err error
 
 	// 如果指定了模型，尝试获取对应的配置
 	if modelName != "" {
-		config, err = s.aiService.GetConfigForModel("image", modelName)
+		serviceConfig, err = s.aiService.GetConfigForModel("image", modelName)
 		if err != nil {
 			s.log.Warnw("获取指定模型配置失败，使用默认配置", "模型", modelName, "错误", err)
-			config, err = s.aiService.GetDefaultConfig("image")
+			serviceConfig, err = s.aiService.GetDefaultConfig("image")
 			if err != nil {
 				return nil, fmt.Errorf("未找到图片AI配置: %w", err)
 			}
 		}
 	} else {
 		// 使用默认配置
-		config, err = s.aiService.GetDefaultConfig("image")
+		serviceConfig, err = s.aiService.GetDefaultConfig("image")
 		if err != nil {
 			return nil, fmt.Errorf("未找到图片AI配置: %w", err)
 		}
@@ -560,12 +560,12 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 
 	// 使用指定的模型或配置中的第一个模型
 	model := modelName
-	if model == "" && len(config.Model) > 0 {
-		model = config.Model[0]
+	if model == "" && len(serviceConfig.Model) > 0 {
+		model = serviceConfig.Model[0]
 	}
 
 	// 使用配置中的 provider，如果没有则使用传入的 provider
-	actualProvider := config.Provider
+	actualProvider := serviceConfig.Provider
 	if actualProvider == "" {
 		actualProvider = provider
 	}
@@ -573,27 +573,27 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 	// 根据 provider 自动设置默认端点
 	var endpoint string
 
-	s.log.Infow("图片生成配置", "提供商", actualProvider, "模型", model, "基础URL", config.BaseURL)
+	s.log.Infow("图片生成配置", "提供商", actualProvider, "模型", model, "基础URL", serviceConfig.BaseURL)
 
 	switch actualProvider {
 	case "openai", "dalle":
 		endpoint = "/images/generations"
-		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewOpenAIImageClient(serviceConfig.BaseURL, serviceConfig.APIKey, model, endpoint), nil
 	case "chatfire":
 		endpoint = "/images/generations"
-		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewOpenAIImageClient(serviceConfig.BaseURL, serviceConfig.APIKey, model, endpoint), nil
 	case "volcengine", "volces", "doubao":
 		endpoint = "/images/generations"
-		return image.NewVolcengineImageClient(config.BaseURL, config.APIKey, model), nil
+		return image.NewVolcengineImageClient(serviceConfig.BaseURL, serviceConfig.APIKey, model), nil
 	case "gemini", "google":
 		endpoint = "/v1beta/models/{model}:generateContent"
-		return image.NewGeminiImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewGeminiImageClient(serviceConfig.BaseURL, serviceConfig.APIKey, model, endpoint), nil
 	case "vidu":
 		endpoint = "/reference2image"
-		return image.NewViduImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewViduImageClient(serviceConfig.BaseURL, serviceConfig.APIKey, model, endpoint), nil
 	default:
 		endpoint = "/images/generations"
-		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+		return image.NewOpenAIImageClient(serviceConfig.BaseURL, serviceConfig.APIKey, model, endpoint), nil
 	}
 }
 
