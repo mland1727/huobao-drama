@@ -40,7 +40,7 @@ func truncateImageURL(url string) string {
 	// 如果是 data URI 格式（base64），只显示前缀
 	if strings.HasPrefix(url, "data:") {
 		if len(url) > 50 {
-			return url[:50] + "...[base64 data]"
+			return url[:50] + "...[base64数据]"
 		}
 	}
 	// 普通 URL 如果过长也截断
@@ -115,7 +115,7 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 	// 转换DramaID
 	dramaIDParsed, err := strconv.ParseUint(request.DramaID, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid drama ID")
+		return nil, fmt.Errorf("无效的剧本ID")
 	}
 
 	// 设置默认图片类型
@@ -155,7 +155,7 @@ func (s *ImageGenerationService) GenerateImage(request *GenerateImageRequest) (*
 	}
 
 	if err := s.db.Create(imageGen).Error; err != nil {
-		return nil, fmt.Errorf("failed to create record: %w", err)
+		return nil, fmt.Errorf("创建记录失败: %w", err)
 	}
 
 	go s.ProcessImageGeneration(imageGen.ID)
@@ -314,8 +314,8 @@ func (s *ImageGenerationService) ProcessImageGeneration(imageGenID uint) {
 
 // pollTaskStatus 轮询图片生成任务状态
 func (s *ImageGenerationService) pollTaskStatus(imageGenID uint, client image.ImageClient, taskID string) {
-	// 最多轮询60次，每次间隔5秒
-	maxAttempts := 60
+	// 最多轮询180次，每次间隔5秒，总计约15分钟
+	maxAttempts := 180
 	pollInterval := 5 * time.Second
 
 	for range maxAttempts {
@@ -323,7 +323,7 @@ func (s *ImageGenerationService) pollTaskStatus(imageGenID uint, client image.Im
 
 		result, err := client.GetTaskStatus(taskID)
 		if err != nil {
-			s.log.Errorw("Failed to get task status", "error", err, "task_id", taskID)
+			s.log.Errorw("获取任务状态失败", "错误", err, "任务ID", taskID)
 			continue
 		}
 
@@ -338,7 +338,7 @@ func (s *ImageGenerationService) pollTaskStatus(imageGenID uint, client image.Im
 		}
 	}
 
-	s.updateImageGenError(imageGenID, "timeout: image generation took too long")
+	s.updateImageGenError(imageGenID, "超时：图片生成耗时过长")
 }
 
 // completeImageGeneration 完成图片生成处理
@@ -355,16 +355,16 @@ func (s *ImageGenerationService) completeImageGeneration(imageGenID uint, result
 			if len(errStr) > 200 {
 				errStr = errStr[:200] + "..."
 			}
-			s.log.Warnw("Failed to download image to local storage",
-				"error", errStr,
-				"id", imageGenID,
-				"original_url", truncateImageURL(result.ImageURL))
+			s.log.Warnw("下载图片到本地存储失败",
+				"错误", errStr,
+				"ID", imageGenID,
+				"原始URL", truncateImageURL(result.ImageURL))
 		} else {
 			localPath = &downloadResult.RelativePath
-			s.log.Infow("Image downloaded to local storage",
-				"id", imageGenID,
-				"original_url", truncateImageURL(result.ImageURL),
-				"local_path", downloadResult.RelativePath)
+			s.log.Infow("图片已下载到本地存储",
+				"ID", imageGenID,
+				"原始URL", truncateImageURL(result.ImageURL),
+				"本地路径", downloadResult.RelativePath)
 		}
 	}
 
@@ -386,31 +386,31 @@ func (s *ImageGenerationService) completeImageGeneration(imageGenID uint, result
 	// 更新image_generation记录
 	var imageGen models.ImageGeneration
 	if err := s.db.Where("id = ?", imageGenID).First(&imageGen).Error; err != nil {
-		s.log.Errorw("Failed to load image generation", "error", err, "id", imageGenID)
+		s.log.Errorw("加载图片生成记录失败", "错误", err, "ID", imageGenID)
 		return
 	}
 
 	// 使用 Updates 更新基本字段
 	if err := s.db.Model(&models.ImageGeneration{}).Where("id = ?", imageGenID).Updates(updates).Error; err != nil {
-		s.log.Errorw("Failed to update image generation", "error", err, "id", imageGenID)
+		s.log.Errorw("更新图片生成记录失败", "错误", err, "ID", imageGenID)
 		return
 	}
 
 	// 单独更新 local_path 字段（即使为 nil 也要更新）
 	if err := s.db.Model(&models.ImageGeneration{}).Where("id = ?", imageGenID).Update("local_path", localPath).Error; err != nil {
-		s.log.Errorw("Failed to update local_path", "error", err, "id", imageGenID)
+		s.log.Errorw("更新本地路径失败", "错误", err, "ID", imageGenID)
 	}
 
-	s.log.Infow("Image generation completed", "id", imageGenID)
+	s.log.Infow("图片生成完成", "ID", imageGenID)
 
 	// 如果关联了storyboard，同步更新storyboard的composed_image
 	if imageGen.StoryboardID != nil {
 		if err := s.db.Model(&models.Storyboard{}).Where("id = ?", *imageGen.StoryboardID).Update("composed_image", result.ImageURL).Error; err != nil {
-			s.log.Errorw("Failed to update storyboard composed_image", "error", err, "storyboard_id", *imageGen.StoryboardID)
+			s.log.Errorw("更新分镜合成图失败", "错误", err, "分镜ID", *imageGen.StoryboardID)
 		} else {
-			s.log.Infow("Storyboard updated with composed image",
-				"storyboard_id", *imageGen.StoryboardID,
-				"composed_image", truncateImageURL(result.ImageURL))
+			s.log.Infow("分镜已更新合成图",
+				"分镜ID", *imageGen.StoryboardID,
+				"合成图", truncateImageURL(result.ImageURL))
 		}
 	}
 
@@ -424,12 +424,12 @@ func (s *ImageGenerationService) completeImageGeneration(imageGenID uint, result
 			sceneUpdates["local_path"] = localPath
 		}
 		if err := s.db.Model(&models.Scene{}).Where("id = ?", *imageGen.SceneID).Updates(sceneUpdates).Error; err != nil {
-			s.log.Errorw("Failed to update scene", "error", err, "scene_id", *imageGen.SceneID)
+			s.log.Errorw("更新场景失败", "错误", err, "场景ID", *imageGen.SceneID)
 		} else {
-			s.log.Infow("Scene updated with generated image",
-				"scene_id", *imageGen.SceneID,
-				"image_url", truncateImageURL(result.ImageURL),
-				"local_path", localPath)
+			s.log.Infow("场景已更新生成的图片",
+				"场景ID", *imageGen.SceneID,
+				"图片URL", truncateImageURL(result.ImageURL),
+				"本地路径", localPath)
 		}
 	}
 
@@ -442,12 +442,12 @@ func (s *ImageGenerationService) completeImageGeneration(imageGenID uint, result
 			characterUpdates["local_path"] = localPath
 		}
 		if err := s.db.Model(&models.Character{}).Where("id = ?", *imageGen.CharacterID).Updates(characterUpdates).Error; err != nil {
-			s.log.Errorw("Failed to update character", "error", err, "character_id", *imageGen.CharacterID)
+			s.log.Errorw("更新角色失败", "错误", err, "角色ID", *imageGen.CharacterID)
 		} else {
-			s.log.Infow("Character updated with generated image",
-				"character_id", *imageGen.CharacterID,
-				"image_url", truncateImageURL(result.ImageURL),
-				"local_path", localPath)
+			s.log.Infow("角色已更新生成的图片",
+				"角色ID", *imageGen.CharacterID,
+				"图片URL", truncateImageURL(result.ImageURL),
+				"本地路径", localPath)
 		}
 	}
 
@@ -460,12 +460,12 @@ func (s *ImageGenerationService) completeImageGeneration(imageGenID uint, result
 			propUpdates["local_path"] = localPath
 		}
 		if err := s.db.Model(&models.Prop{}).Where("id = ?", *imageGen.PropID).Updates(propUpdates).Error; err != nil {
-			s.log.Errorw("Failed to update prop", "error", err, "prop_id", *imageGen.PropID)
+			s.log.Errorw("更新道具失败", "错误", err, "道具ID", *imageGen.PropID)
 		} else {
-			s.log.Infow("Prop updated with generated image",
-				"prop_id", *imageGen.PropID,
-				"image_url", truncateImageURL(result.ImageURL),
-				"local_path", localPath)
+			s.log.Infow("道具已更新生成的图片",
+				"道具ID", *imageGen.PropID,
+				"图片URL", truncateImageURL(result.ImageURL),
+				"本地路径", localPath)
 		}
 	}
 }
@@ -474,7 +474,7 @@ func (s *ImageGenerationService) updateImageGenError(imageGenID uint, errorMsg s
 	// 先获取image_generation记录
 	var imageGen models.ImageGeneration
 	if err := s.db.Where("id = ?", imageGenID).First(&imageGen).Error; err != nil {
-		s.log.Errorw("Failed to load image generation", "error", err, "id", imageGenID)
+		s.log.Errorw("加载图片生成记录失败", "错误", err, "ID", imageGenID)
 		return
 	}
 
@@ -483,19 +483,19 @@ func (s *ImageGenerationService) updateImageGenError(imageGenID uint, errorMsg s
 		"status":    models.ImageStatusFailed,
 		"error_msg": errorMsg,
 	})
-	s.log.Errorw("Image generation failed", "id", imageGenID, "error", errorMsg)
+	s.log.Errorw("图片生成失败", "ID", imageGenID, "错误", errorMsg)
 
 	// 如果关联了scene，同步更新scene为失败状态
 	if imageGen.SceneID != nil {
 		s.db.Model(&models.Scene{}).Where("id = ?", *imageGen.SceneID).Update("status", "failed")
-		s.log.Warnw("Scene marked as failed", "scene_id", *imageGen.SceneID)
+		s.log.Warnw("场景已标记为失败", "场景ID", *imageGen.SceneID)
 	}
 }
 
 func (s *ImageGenerationService) getImageClient(provider string) (image.ImageClient, error) {
 	config, err := s.aiService.GetDefaultConfig("image")
 	if err != nil {
-		return nil, fmt.Errorf("no image AI config found: %w", err)
+		return nil, fmt.Errorf("未找到图片AI配置: %w", err)
 	}
 
 	// 使用第一个模型
@@ -524,10 +524,13 @@ func (s *ImageGenerationService) getImageClient(provider string) (image.ImageCli
 	case "volcengine", "volces", "doubao":
 		endpoint = "/images/generations"
 		queryEndpoint = ""
-		return image.NewVolcEngineImageClient(config.BaseURL, config.APIKey, model, endpoint, queryEndpoint), nil
+		return image.NewVolcEngineImageClient(config.BaseURL, config.APIKey, model), nil
 	case "gemini", "google":
 		endpoint = "/v1beta/models/{model}:generateContent"
 		return image.NewGeminiImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
+	case "vidu":
+		endpoint = "/reference2image"
+		return image.NewViduImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
 	default:
 		endpoint = "/images/generations"
 		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
@@ -543,17 +546,17 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 	if modelName != "" {
 		config, err = s.aiService.GetConfigForModel("image", modelName)
 		if err != nil {
-			s.log.Warnw("Failed to get config for model, using default", "model", modelName, "error", err)
+			s.log.Warnw("获取指定模型配置失败，使用默认配置", "模型", modelName, "错误", err)
 			config, err = s.aiService.GetDefaultConfig("image")
 			if err != nil {
-				return nil, fmt.Errorf("no image AI config found: %w", err)
+				return nil, fmt.Errorf("未找到图片AI配置: %w", err)
 			}
 		}
 	} else {
 		// 使用默认配置
 		config, err = s.aiService.GetDefaultConfig("image")
 		if err != nil {
-			return nil, fmt.Errorf("no image AI config found: %w", err)
+			return nil, fmt.Errorf("未找到图片AI配置: %w", err)
 		}
 	}
 
@@ -573,8 +576,7 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 	var endpoint string
 	var queryEndpoint string
 
-	// {"provider": "vidu", "model": "viduq2", "base_url": "https://api.vidu.cn/ent/v2"}
-	s.log.Infow("图片生成配置", "provider", actualProvider, "model", model, "base_url", config.BaseURL)
+	s.log.Infow("图片生成配置", "提供商", actualProvider, "模型", model, "基础URL", config.BaseURL)
 
 	switch actualProvider {
 	case "openai", "dalle":
@@ -586,7 +588,7 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 	case "volcengine", "volces", "doubao":
 		endpoint = "/images/generations"
 		queryEndpoint = ""
-		return image.NewVolcEngineImageClient(config.BaseURL, config.APIKey, model, endpoint, queryEndpoint), nil
+		return image.NewVolcEngineImageClient(config.BaseURL, config.APIKey, model), nil
 	case "gemini", "google":
 		endpoint = "/v1beta/models/{model}:generateContent"
 		return image.NewGeminiImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
@@ -650,7 +652,7 @@ func (s *ImageGenerationService) DeleteImageGeneration(imageGenID uint) error {
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		return fmt.Errorf("image generation not found")
+		return fmt.Errorf("图片生成记录不存在")
 	}
 	return nil
 }
@@ -669,13 +671,13 @@ func (s *ImageGenerationService) CreateImageFromUpload(req *UploadImageRequest) 
 	// 验证storyboard存在
 	var storyboard models.Storyboard
 	if err := s.db.First(&storyboard, req.StoryboardID).Error; err != nil {
-		return nil, fmt.Errorf("storyboard not found")
+		return nil, fmt.Errorf("分镜不存在")
 	}
 
 	// 验证drama存在
 	var drama models.Drama
 	if err := s.db.First(&drama, req.DramaID).Error; err != nil {
-		return nil, fmt.Errorf("drama not found")
+		return nil, fmt.Errorf("剧本不存在")
 	}
 
 	prompt := req.Prompt
@@ -698,13 +700,13 @@ func (s *ImageGenerationService) CreateImageFromUpload(req *UploadImageRequest) 
 	}
 
 	if err := s.db.Create(imageGen).Error; err != nil {
-		return nil, fmt.Errorf("failed to create image record: %w", err)
+		return nil, fmt.Errorf("创建图片记录失败: %w", err)
 	}
 
-	s.log.Infow("Image created from upload",
-		"id", imageGen.ID,
-		"storyboard_id", req.StoryboardID,
-		"frame_type", req.FrameType)
+	s.log.Infow("从上传创建图片记录",
+		"ID", imageGen.ID,
+		"分镜ID", req.StoryboardID,
+		"帧类型", req.FrameType)
 
 	return imageGen, nil
 }
@@ -713,13 +715,13 @@ func (s *ImageGenerationService) GenerateImagesForScene(sceneID string) ([]*mode
 	// 转换sceneID
 	sid, err := strconv.ParseUint(sceneID, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid scene ID")
+		return nil, fmt.Errorf("无效的场景ID")
 	}
 	sceneIDUint := uint(sid)
 
 	var scene models.Scene
 	if err := s.db.Where("id = ?", sceneIDUint).First(&scene).Error; err != nil {
-		return nil, fmt.Errorf("scene not found")
+		return nil, fmt.Errorf("场景不存在")
 	}
 
 	// 构建场景图片生成提示词
@@ -758,24 +760,24 @@ type BackgroundInfo struct {
 func (s *ImageGenerationService) BatchGenerateImagesForEpisode(episodeID string) ([]*models.ImageGeneration, error) {
 	var ep models.Episode
 	if err := s.db.Preload("Drama").Where("id = ?", episodeID).First(&ep).Error; err != nil {
-		return nil, fmt.Errorf("episode not found")
+		return nil, fmt.Errorf("剧集不存在")
 	}
 	// 从数据库读取已保存的场景
 	var scenes []models.Storyboard
 	if err := s.db.Where("episode_id = ?", episodeID).Find(&scenes).Error; err != nil {
-		return nil, fmt.Errorf("failed to get scenes: %w", err)
+		return nil, fmt.Errorf("获取场景失败: %w", err)
 	}
 
 	backgrounds := s.extractUniqueBackgrounds(scenes)
-	s.log.Infow("Extracted unique backgrounds",
-		"episode_id", episodeID,
-		"background_count", len(backgrounds))
+	s.log.Infow("已提取唯一背景",
+		"剧集ID", episodeID,
+		"背景数量", len(backgrounds))
 
 	// 为每个背景生成图片
 	var results []*models.ImageGeneration
 	for _, bg := range scenes {
 		if bg.ImagePrompt == nil || *bg.ImagePrompt == "" {
-			s.log.Warnw("Background has no prompt, skipping", "scene_id", bg.ID)
+			s.log.Warnw("背景没有提示词，跳过", "场景ID", bg.ID)
 			continue
 		}
 
@@ -790,19 +792,19 @@ func (s *ImageGenerationService) BatchGenerateImagesForEpisode(episodeID string)
 
 		imageGen, err := s.GenerateImage(req)
 		if err != nil {
-			s.log.Errorw("Failed to generate image for background",
-				"scene_id", bg.ID,
-				"location", bg.Location,
-				"error", err)
+			s.log.Errorw("为背景生成图片失败",
+				"场景ID", bg.ID,
+				"地点", bg.Location,
+				"错误", err)
 			s.db.Model(bg).Update("status", "failed")
 			continue
 		}
 
-		s.log.Infow("Background image generation started",
-			"scene_id", bg.ID,
-			"image_gen_id", imageGen.ID,
-			"location", bg.Location,
-			"time", bg.Time)
+		s.log.Infow("背景图片生成已启动",
+			"场景ID", bg.ID,
+			"图片生成ID", imageGen.ID,
+			"地点", bg.Location,
+			"时间", bg.Time)
 
 		results = append(results, imageGen)
 	}
@@ -814,13 +816,13 @@ func (s *ImageGenerationService) BatchGenerateImagesForEpisode(episodeID string)
 func (s *ImageGenerationService) GetScencesForEpisode(episodeID string) ([]*models.Scene, error) {
 	var episode models.Episode
 	if err := s.db.Preload("Drama").Where("id = ?", episodeID).First(&episode).Error; err != nil {
-		return nil, fmt.Errorf("episode not found")
+		return nil, fmt.Errorf("剧集不存在")
 	}
 
 	// 场景是项目级的，通过drama_id查询
 	var scenes []*models.Scene
 	if err := s.db.Where("drama_id = ?", episode.DramaID).Order("location ASC, time ASC").Find(&scenes).Error; err != nil {
-		return nil, fmt.Errorf("failed to load scenes: %w", err)
+		return nil, fmt.Errorf("加载场景失败: %w", err)
 	}
 
 	return scenes, nil
@@ -830,12 +832,12 @@ func (s *ImageGenerationService) GetScencesForEpisode(episodeID string) ([]*mode
 func (s *ImageGenerationService) ExtractBackgroundsForEpisode(episodeID string, model string, style string) (string, error) {
 	var episode models.Episode
 	if err := s.db.Preload("Storyboards").First(&episode, episodeID).Error; err != nil {
-		return "", fmt.Errorf("episode not found")
+		return "", fmt.Errorf("剧集不存在")
 	}
 
 	// 如果没有剧本内容，无法提取场景
 	if episode.ScriptContent == nil || *episode.ScriptContent == "" {
-		return "", fmt.Errorf("episode has no script content")
+		return "", fmt.Errorf("剧集没有剧本内容")
 	}
 
 	// 创建任务
@@ -844,14 +846,14 @@ func (s *ImageGenerationService) ExtractBackgroundsForEpisode(episodeID string, 
 	}
 	task, err := s.taskService.CreateTask("background_extraction", taskParam)
 	if err != nil {
-		s.log.Errorw("Failed to create background extraction task", "error", err, "episode_id", episodeID)
+		s.log.Errorw("创建背景提取任务失败", "错误", err, "剧集ID", episodeID)
 		return "", fmt.Errorf("创建任务失败: %w", err)
 	}
 
 	// 异步处理场景提取
 	go s.processBackgroundExtraction(task.ID, episodeID, model, style)
 
-	s.log.Infow("Background extraction task created", "task_id", task.ID, "episode_id", episodeID)
+	s.log.Infow("背景提取任务已创建", "任务ID", task.ID, "剧集ID", episodeID)
 	return task.ID, nil
 }
 
@@ -862,24 +864,24 @@ func (s *ImageGenerationService) processBackgroundExtraction(taskID string, epis
 
 	var episode models.Episode
 	if err := s.db.Preload("Storyboards").First(&episode, episodeID).Error; err != nil {
-		s.log.Errorw("Episode not found during background extraction", "error", err, "episode_id", episodeID)
+		s.log.Errorw("背景提取过程中剧集不存在", "错误", err, "剧集ID", episodeID)
 		s.taskService.UpdateTaskStatus(taskID, "failed", 0, "剧集信息不存在")
 		return
 	}
 
 	if episode.ScriptContent == nil || *episode.ScriptContent == "" {
-		s.log.Errorw("Episode has no script content during background extraction", "episode_id", episodeID)
+		s.log.Errorw("背景提取过程中剧集没有剧本内容", "剧集ID", episodeID)
 		s.taskService.UpdateTaskStatus(taskID, "failed", 0, "剧本内容为空")
 		return
 	}
 
-	s.log.Infow("Extracting backgrounds from script", "episode_id", episodeID, "model", model, "task_id", taskID)
+	s.log.Infow("从剧本中提取背景", "剧集ID", episodeID, "模型", model, "任务ID", taskID)
 	dramaID := episode.DramaID
 
 	// 使用AI从剧本内容中提取场景
 	backgroundsInfo, err := s.extractBackgroundsFromScript(*episode.ScriptContent, dramaID, model, style)
 	if err != nil {
-		s.log.Errorw("Failed to extract backgrounds from script", "error", err, "task_id", taskID)
+		s.log.Errorw("从剧本提取背景失败", "错误", err, "任务ID", taskID)
 		s.taskService.UpdateTaskStatus(taskID, "failed", 0, "AI提取场景失败: "+err.Error())
 		return
 	}
@@ -889,10 +891,10 @@ func (s *ImageGenerationService) processBackgroundExtraction(taskID string, epis
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		// 先删除该章节的所有场景（实现重新提取覆盖功能）
 		if err := tx.Where("episode_id = ?", episode.ID).Delete(&models.Scene{}).Error; err != nil {
-			s.log.Errorw("Failed to delete old scenes", "error", err, "task_id", taskID)
+			s.log.Errorw("删除旧场景失败", "错误", err, "任务ID", taskID)
 			return err
 		}
-		s.log.Infow("Deleted old scenes for re-extraction", "episode_id", episode.ID, "task_id", taskID)
+		s.log.Infow("已删除旧场景用于重新提取", "剧集ID", episode.ID, "任务ID", taskID)
 
 		// 创建新提取的场景
 		for _, bgInfo := range backgroundsInfo {
@@ -912,18 +914,18 @@ func (s *ImageGenerationService) processBackgroundExtraction(taskID string, epis
 			}
 			scenes = append(scenes, scene)
 
-			s.log.Infow("Created new scene from script",
-				"scene_id", scene.ID,
-				"location", scene.Location,
-				"time", scene.Time,
-				"task_id", taskID)
+			s.log.Infow("从剧本创建新场景",
+				"场景ID", scene.ID,
+				"地点", scene.Location,
+				"时间", scene.Time,
+				"任务ID", taskID)
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		s.log.Errorw("Failed to save scenes to database", "error", err, "task_id", taskID)
+		s.log.Errorw("保存场景到数据库失败", "错误", err, "任务ID", taskID)
 		s.taskService.UpdateTaskStatus(taskID, "failed", 0, "保存场景信息失败: "+err.Error())
 		return
 	}
@@ -937,11 +939,11 @@ func (s *ImageGenerationService) processBackgroundExtraction(taskID string, epis
 	}
 	s.taskService.UpdateTaskResult(taskID, resultData)
 
-	s.log.Infow("Background extraction completed",
-		"task_id", taskID,
-		"episode_id", episodeID,
-		"total_storyboards", len(episode.Storyboards),
-		"unique_scenes", len(scenes))
+	s.log.Infow("背景提取完成",
+		"任务ID", taskID,
+		"剧集ID", episodeID,
+		"总分镜数", len(episode.Storyboards),
+		"唯一场景数", len(scenes))
 }
 
 // extractBackgroundsFromScript 从剧本内容中使用AI提取场景信息
@@ -954,17 +956,17 @@ func (s *ImageGenerationService) extractBackgroundsFromScript(scriptContent stri
 	var client ai.AIClient
 	var err error
 	if model != "" {
-		s.log.Infow("Using specified model for background extraction", "model", model)
+		s.log.Infow("使用指定模型进行背景提取", "模型", model)
 		client, err = s.aiService.GetAIClientForModel("text", model)
 		if err != nil {
-			s.log.Warnw("Failed to get client for specified model, using default", "model", model, "error", err)
+			s.log.Warnw("获取指定模型客户端失败，使用默认配置", "模型", model, "错误", err)
 			client, err = s.aiService.GetAIClient("text")
 		}
 	} else {
 		client, err = s.aiService.GetAIClient("text")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AI client: %w", err)
+		return nil, fmt.Errorf("获取AI客户端失败: %w", err)
 	}
 
 	// 使用国际化提示词
@@ -1059,44 +1061,44 @@ Please strictly follow the JSON format and ensure all fields use English.`
 %s`, systemPrompt, contentLabel, scriptContent, formatInstructions)
 
 	// 打印完整提示词用于调试
-	s.log.Infow("=== AI Prompt for Background Extraction (extractBackgroundsFromScript) ===",
-		"language", s.promptI18n.GetLanguage(),
-		"prompt_length", len(prompt),
-		"full_prompt", prompt)
+	s.log.Infow("=== 背景提取AI提示词 (extractBackgroundsFromScript) ===",
+		"语言", s.promptI18n.GetLanguage(),
+		"提示词长度", len(prompt),
+		"完整提示词", prompt)
 
 	response, err := client.GenerateText(prompt, "", ai.WithTemperature(0.7))
 	if err != nil {
-		s.log.Errorw("Failed to extract backgrounds with AI", "error", err)
+		s.log.Errorw("AI提取背景失败", "错误", err)
 		return nil, fmt.Errorf("AI提取场景失败: %w", err)
 	}
 
 	// 打印AI返回的原始响应
-	s.log.Infow("=== AI Response for Background Extraction (extractBackgroundsFromScript) ===",
-		"response_length", len(response),
-		"raw_response", response)
+	s.log.Infow("=== 背景提取AI响应 (extractBackgroundsFromScript) ===",
+		"响应长度", len(response),
+		"原始响应", response)
 
 	// 解析AI返回的JSON
 	var backgrounds []BackgroundInfo
 
 	// 先尝试解析为数组格式
 	if err := utils.SafeParseAIJSON(response, &backgrounds); err == nil {
-		s.log.Infow("Parsed backgrounds as array format", "count", len(backgrounds))
+		s.log.Infow("已解析背景为数组格式", "数量", len(backgrounds))
 	} else {
 		// 尝试解析为对象格式
 		var result struct {
 			Backgrounds []BackgroundInfo `json:"backgrounds"`
 		}
 		if err := utils.SafeParseAIJSON(response, &result); err != nil {
-			s.log.Errorw("Failed to parse AI response in both formats", "error", err, "response", response[:min(len(response), 500)])
+			s.log.Errorw("两种格式都无法解析AI响应", "错误", err, "响应", response[:min(len(response), 500)])
 			return nil, fmt.Errorf("解析AI响应失败: %w", err)
 		}
 		backgrounds = result.Backgrounds
-		s.log.Infow("Parsed backgrounds as object format", "count", len(backgrounds))
+		s.log.Infow("已解析背景为对象格式", "数量", len(backgrounds))
 	}
 
-	s.log.Infow("Extracted backgrounds from script",
-		"drama_id", dramaID,
-		"backgrounds_count", len(backgrounds))
+	s.log.Infow("从剧本中提取背景完成",
+		"剧本ID", dramaID,
+		"背景数量", len(backgrounds))
 
 	return backgrounds, nil
 }
@@ -1219,21 +1221,21 @@ Please strictly follow the JSON format and ensure:
 %s`, systemPrompt, storyboardLabel, scenesText, formatInstructions)
 
 	// 打印完整提示词用于调试
-	s.log.Infow("=== AI Prompt for Background Extraction (extractBackgroundsWithAI) ===",
-		"language", s.promptI18n.GetLanguage(),
-		"prompt_length", len(prompt),
-		"full_prompt", prompt)
+	s.log.Infow("=== 背景提取AI提示词 (extractBackgroundsWithAI) ===",
+		"语言", s.promptI18n.GetLanguage(),
+		"提示词长度", len(prompt),
+		"完整提示词", prompt)
 
 	// 调用AI服务
 	text, err := s.aiService.GenerateText(prompt, "")
 	if err != nil {
-		return nil, fmt.Errorf("AI analysis failed: %w", err)
+		return nil, fmt.Errorf("AI分析失败: %w", err)
 	}
 
 	// 打印AI返回的原始响应
-	s.log.Infow("=== AI Response for Background Extraction ===",
-		"response_length", len(text),
-		"raw_response", text)
+	s.log.Infow("=== 背景提取AI响应 ===",
+		"响应长度", len(text),
+		"原始响应", text)
 
 	// 解析AI返回的JSON
 	var result struct {
@@ -1246,7 +1248,7 @@ Please strictly follow the JSON format and ensure:
 	}
 
 	if err := utils.SafeParseAIJSON(text, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+		return nil, fmt.Errorf("解析AI响应失败: %w", err)
 	}
 
 	// 构建场景编号到场景ID的映射
@@ -1276,9 +1278,9 @@ Please strictly follow the JSON format and ensure:
 		})
 	}
 
-	s.log.Infow("AI extracted backgrounds",
-		"total_scenes", len(storyboards),
-		"extracted_backgrounds", len(backgrounds))
+	s.log.Infow("AI提取背景完成",
+		"总场景数", len(storyboards),
+		"提取背景数", len(backgrounds))
 
 	return backgrounds, nil
 }
@@ -1342,7 +1344,7 @@ func (s *ImageGenerationService) loadImageAsBase64(localPath string) (string, er
 	// 读取文件
 	fileData, err := os.ReadFile(fullPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read image file: %w", err)
+		return "", fmt.Errorf("读取图片文件失败: %w", err)
 	}
 
 	// 根据文件扩展名确定 MIME 类型

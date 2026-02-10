@@ -39,7 +39,7 @@ func NewVolcengineClient(baseURL, apiKey, model string) *VolcengineClient {
 // systemPrompt: 系统提示语
 // options: 可选参数，如最大 token 数等
 func (c *VolcengineClient) GenerateText(prompt string, systemPrompt string, options ...func(*ChatCompletionRequest)) (string, error) {
-	messages := []*model.ChatCompletionMessage{}
+	var messages []*model.ChatCompletionMessage
 	// 如果有系统提示语，先添加系统消息
 	if systemPrompt != "" {
 		messages = append(messages, &model.ChatCompletionMessage{

@@ -1,69 +1,47 @@
 package image
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"time"
+
+	"github.com/volcengine/volcengine-go-sdk/service/arkruntime"
+	modelArkruntime "github.com/volcengine/volcengine-go-sdk/service/arkruntime/model"
+	"github.com/volcengine/volcengine-go-sdk/volcengine"
 )
 
-type VolcEngineImageClient struct {
-	BaseURL       string
-	APIKey        string
-	Model         string
-	Endpoint      string
-	QueryEndpoint string
-	HTTPClient    *http.Client
+type VolcengineImageClient struct {
+	ctx       context.Context
+	BaseURL   string
+	APIKey    string
+	Model     string
+	apiClient *arkruntime.Client
 }
 
-type VolcEngineImageRequest struct {
-	Model                     string   `json:"model"`
-	Prompt                    string   `json:"prompt"`
-	Image                     []string `json:"image,omitempty"`
-	SequentialImageGeneration string   `json:"sequential_image_generation,omitempty"`
-	Size                      string   `json:"size,omitempty"`
-	Watermark                 bool     `json:"watermark,omitempty"`
-}
-
-type VolcEngineImageResponse struct {
-	Model   string `json:"model"`
-	Created int64  `json:"created"`
-	Data    []struct {
-		URL  string `json:"url"`
-		Size string `json:"size"`
-	} `json:"data"`
-	Usage struct {
-		GeneratedImages int `json:"generated_images"`
-		OutputTokens    int `json:"output_tokens"`
-		TotalTokens     int `json:"total_tokens"`
-	} `json:"usage"`
-	Error interface{} `json:"error,omitempty"`
-}
-
-func NewVolcEngineImageClient(baseURL, apiKey, model, endpoint, queryEndpoint string) *VolcEngineImageClient {
-	if endpoint == "" {
-		endpoint = "/api/v3/images/generations"
+func NewVolcEngineImageClient(baseURL, apiKey, model string) *VolcengineImageClient {
+	if baseURL == "" {
+		baseURL = "https://ark.cn-beijing.volces.com/api/v3"
 	}
-	if queryEndpoint == "" {
-		queryEndpoint = endpoint
+	if model == "" {
+		model = "doubao-seedream-4-0-250828" // 默认模型
 	}
-	return &VolcEngineImageClient{
-		BaseURL:       baseURL,
-		APIKey:        apiKey,
-		Model:         model,
-		Endpoint:      endpoint,
-		QueryEndpoint: queryEndpoint,
-		HTTPClient: &http.Client{
-			Timeout: 10 * time.Minute,
-		},
+
+	apiClient := arkruntime.NewClientWithApiKey(
+		apiKey,
+		arkruntime.WithBaseUrl(baseURL),
+	)
+
+	return &VolcengineImageClient{
+		ctx:       context.Background(),
+		BaseURL:   baseURL,
+		APIKey:    apiKey,
+		Model:     model,
+		apiClient: apiClient,
 	}
 }
 
-func (c *VolcEngineImageClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageResult, error) {
+func (c *VolcengineImageClient) GenerateImage(prompt string, opts ...ImageOption) (*ImageResult, error) {
 	options := &ImageOptions{
-		Size:    "1920x1920",
+		Size:    "2K",
 		Quality: "standard",
 	}
 
@@ -78,9 +56,10 @@ func (c *VolcEngineImageClient) GenerateImage(prompt string, opts ...ImageOption
 
 	promptText := prompt
 	if options.NegativePrompt != "" {
-		promptText += fmt.Sprintf(". Negative: %s", options.NegativePrompt)
+		promptText += fmt.Sprintf(". 负面提示: %s", options.NegativePrompt)
 	}
 
+	// 处理尺寸参数
 	size := options.Size
 	if size == "" {
 		if model == "doubao-seedream-4-5-251128" {
@@ -90,69 +69,83 @@ func (c *VolcEngineImageClient) GenerateImage(prompt string, opts ...ImageOption
 		}
 	}
 
-	reqBody := VolcEngineImageRequest{
-		Model:                     model,
-		Prompt:                    promptText,
-		Image:                     options.ReferenceImages,
-		SequentialImageGeneration: "disabled",
-		Size:                      size,
-		Watermark:                 false,
+	// 标准化火山引擎支持的尺寸格式
+	size = normalizeVolcEngineSize(size)
+
+	fmt.Printf("火山引擎图片: 开始生成图片，提示词=%s, 模型=%s, 尺寸=%s\n", promptText, model, size)
+
+	// 构建生成请求
+	generateReq := modelArkruntime.GenerateImagesRequest{
+		Model:          model,
+		Prompt:         promptText,
+		Size:           volcengine.String(size),
+		ResponseFormat: volcengine.String(modelArkruntime.GenerateImagesResponseFormatURL),
+		Watermark:      volcengine.Bool(false), // 默认不添加水印
 	}
 
-	jsonData, err := json.Marshal(reqBody)
+	// 如果有参考图片，设置图片参数（注意：火山引擎可能不支持参考图片，这里先预留）
+	if len(options.ReferenceImages) > 0 {
+		fmt.Printf("火山引擎图片: 检测到参考图片 %d 张，当前模型可能不支持参考图片功能\n", len(options.ReferenceImages))
+	}
+
+	// 调用 SDK 生成图片
+	imagesResponse, err := c.apiClient.GenerateImages(c.ctx, generateReq)
 	if err != nil {
-		return nil, fmt.Errorf("marshal request: %w", err)
+		fmt.Printf("火山引擎图片: 生成图片失败: %v\n", err)
+		return nil, fmt.Errorf("火山引擎图片生成失败: %w", err)
 	}
 
-	url := c.BaseURL + c.Endpoint
-	fmt.Printf("[VolcEngine Image] Request URL: %s\n", url)
-	fmt.Printf("[VolcEngine Image] Request Body: %s\n", string(jsonData))
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+	if len(imagesResponse.Data) == 0 {
+		return nil, fmt.Errorf("火山引擎没有生成任何图片")
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.APIKey)
-
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response: %w", err)
+	// 获取第一张图片的URL
+	imageURL := ""
+	if imagesResponse.Data[0].Url != nil {
+		imageURL = *imagesResponse.Data[0].Url
 	}
 
-	fmt.Printf("VolcEngine Image API Response: %s\n", string(body))
+	fmt.Printf("火山引擎图片: 生成完成，图片URL=%s\n", imageURL)
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
-	}
-
-	var result VolcEngineImageResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("parse response: %w", err)
-	}
-
-	if result.Error != nil {
-		return nil, fmt.Errorf("volcengine error: %v", result.Error)
-	}
-
-	if len(result.Data) == 0 {
-		return nil, fmt.Errorf("no image generated")
-	}
-
+	// 火山引擎是同步生成，直接返回完成状态
 	return &ImageResult{
 		Status:    "completed",
-		ImageURL:  result.Data[0].URL,
+		ImageURL:  imageURL,
 		Completed: true,
 	}, nil
 }
 
-func (c *VolcEngineImageClient) GetTaskStatus(taskID string) (*ImageResult, error) {
-	return nil, fmt.Errorf("not supported for VolcEngine Seedream (synchronous generation)")
+func (c *VolcengineImageClient) GetTaskStatus(taskID string) (*ImageResult, error) {
+	return nil, fmt.Errorf("火山引擎图片生成不支持异步任务状态查询（同步生成）")
+}
+
+// normalizeVolcEngineSize 标准化火山引擎支持的尺寸格式
+func normalizeVolcEngineSize(size string) string {
+	// 火山引擎支持的尺寸格式: 1K, 2K, 4K 等
+	switch size {
+	case "720p", "hd":
+		return "1K"
+	case "1080p", "fhd", "standard", "1K":
+		return "1K"
+	case "2k", "2K", "qhd", "1440p":
+		return "2K"
+	case "4k", "4K", "uhd", "high", "2160p":
+		return "4K"
+	default:
+		// 如果是分辨率格式，尝试映射
+		if size == "1280x720" || size == "1920x1080" {
+			return "1K"
+		}
+		if size == "2560x1440" {
+			return "2K"
+		}
+		if size == "3840x2160" {
+			return "4K"
+		}
+		// 检查是否已经是火山引擎格式
+		if size == "1K" || size == "2K" || size == "4K" {
+			return size
+		}
+		return "2K" // 默认值
+	}
 }

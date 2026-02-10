@@ -31,7 +31,7 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
 			SlowThreshold:             time.Second,
-			LogLevel:                  logger.Info, // 显示所有 SQL
+			LogLevel:                  logger.Warn,
 			IgnoreRecordNotFoundError: true,
 			Colorful:                  true,
 		},
