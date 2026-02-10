@@ -70,7 +70,7 @@ func (c *VolcengineImageClient) GenerateImage(prompt string, opts ...ImageOption
 	}
 
 	// 标准化火山引擎支持的尺寸格式
-	size = normalizeVolcEngineSize(size)
+	size = normalizeVolcengineSize(size)
 
 	fmt.Printf("火山引擎图片: 开始生成图片，提示词=%s, 模型=%s, 尺寸=%s\n", promptText, model, size)
 
@@ -119,8 +119,8 @@ func (c *VolcengineImageClient) GetTaskStatus(taskID string) (*ImageResult, erro
 	return nil, fmt.Errorf("火山引擎图片生成不支持异步任务状态查询（同步生成）")
 }
 
-// normalizeVolcEngineSize 标准化火山引擎支持的尺寸格式
-func normalizeVolcEngineSize(size string) string {
+// normalizeVolcengineSize 标准化火山引擎支持的尺寸格式
+func normalizeVolcengineSize(size string) string {
 	// 火山引擎支持的尺寸格式: 1K, 2K, 4K 等
 	switch size {
 	case "720p", "hd":
