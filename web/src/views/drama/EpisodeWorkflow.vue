@@ -5,49 +5,32 @@
         <template #left>
           <el-button text @click="$router.back()" class="back-btn">
             <el-icon><ArrowLeft /></el-icon>
-            <span>{{ $t("workflow.backToProject") }}</span>
+            <span>返回项目</span>
           </el-button>
           <h1 class="header-title">
-            {{ $t("workflow.episodeProduction", { number: episodeNumber }) }}
+            第{{ episodeNumber }}章制作
           </h1>
         </template>
         <template #center>
           <div class="custom-steps">
-            <div
-                class="step-item"
-                :class="{ active: currentStep >= 0, current: currentStep === 0 }"
-            >
+            <div class="step-item" :class="{ active: currentStep >= 0, current: currentStep === 0 }" >
               <div class="step-circle">1</div>
-              <span class="step-text">{{ $t("workflow.steps.content") }}</span>
+              <span class="step-text">章节内容</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
-            <div
-                class="step-item"
-                :class="{ active: currentStep >= 1, current: currentStep === 1 }"
-            >
+            <div class="step-item" :class="{ active: currentStep >= 1, current: currentStep === 1 }" >
               <div class="step-circle">2</div>
-              <span class="step-text">{{
-                  $t("workflow.steps.generateImages")
-                }}</span>
+              <span class="step-text">生成图片</span>
             </div>
             <el-icon class="step-arrow"><ArrowRight /></el-icon>
-            <div
-                class="step-item"
-                :class="{ active: currentStep >= 2, current: currentStep === 2 }"
-            >
+            <div class="step-item" :class="{ active: currentStep >= 2, current: currentStep === 2 }" >
               <div class="step-circle">3</div>
-              <span class="step-text">{{
-                  $t("workflow.steps.splitStoryboard")
-                }}</span>
+              <span class="step-text">拆分分镜</span>
             </div>
           </div>
         </template>
         <template #right>
-          <el-button
-              :icon="Setting"
-              @click="showModelConfigDialog"
-              :title="$t('workflow.modelConfig')"
-          >
+          <el-button :icon="Setting" @click="showModelConfigDialog" title="图文配置" >
             图文配置
           </el-button>
         </template>
@@ -63,22 +46,12 @@
           <div class="stage-body stage-body-fullscreen">
             <!-- 未保存时显示输入框 -->
             <div v-if="!hasScript" class="generation-form">
-              <el-input
-                  v-model="scriptContent"
-                  type="textarea"
-                  :placeholder="$t('workflow.scriptPlaceholder')"
-                  class="script-textarea script-textarea-fullscreen"
-              />
+              <el-input v-model="scriptContent" type="textarea" placeholder="请输入章节内容" class="script-textarea script-textarea-fullscreen" />
 
               <div class="action-buttons-inline">
-                <el-button
-                    type="primary"
-                    size="default"
-                    @click="saveChapterScript"
-                    :disabled="!scriptContent.trim() || generatingScript"
-                >
+                <el-button type="primary" size="default" @click="saveChapterScript" :disabled="!scriptContent.trim() || generatingScript" >
                   <el-icon><Check /></el-icon>
-                  <span>{{ $t("workflow.saveChapter") }}</span>
+                  <span>保存章节</span>
                 </el-button>
               </div>
             </div>
@@ -87,80 +60,44 @@
             <div v-if="hasScript" class="overview-section">
               <div class="episode-info">
                 <h3>
-                  {{ $t("workflow.chapterContent", { number: episodeNumber }) }}
+                  第{{ episodeNumber }}章内容
                 </h3>
-                <el-tag type="success" size="large">{{
-                    $t("workflow.saved")
-                  }}</el-tag>
+                <el-tag type="success" size="large">已保存</el-tag>
               </div>
               <div class="overview-content">
-                <el-input
-                    v-model="currentEpisode.script_content"
-                    type="textarea"
-                    :rows="15"
-                    readonly
-                    class="script-display"
-                />
+                <el-input v-model="currentEpisode.script_content" type="textarea" :rows="15" readonly class="script-display" />
               </div>
 
               <el-divider />
 
               <!-- 显示已提取的角色和场景 -->
               <div v-if="hasExtractedData" class="extracted-info">
-                <el-alert
-                    type="success"
-                    :closable="false"
-                    style="margin-bottom: 16px"
-                >
+                <el-alert type="success" :closable="false" style="margin-bottom: 16px">
                   <template #title>
                     <div style="display: flex; align-items: center; gap: 16px">
-                      <span>✅ {{ $t("workflow.extractedData") }}</span>
-                      <el-tag v-if="hasCharacters" type="success"
-                      >{{ $t("workflow.characters") }}:
-                        {{ charactersCount }}</el-tag
-                      >
-                      <el-tag v-if="currentEpisode?.scenes" type="success"
-                      >{{ $t("workflow.scenes") }}:
-                        {{ currentEpisode.scenes.length }}</el-tag
-                      >
+                      <span>✅ 已提取数据</span>
+                      <el-tag v-if="hasCharacters" type="success">角色:{{ charactersCount }}</el-tag>
+                      <el-tag v-if="currentEpisode?.scenes" type="success">场景:{{ currentEpisode.scenes.length }}</el-tag>
                     </div>
                   </template>
                 </el-alert>
 
                 <!-- 角色列表 -->
                 <div v-if="hasCharacters" style="margin-bottom: 16px">
-                  <h4 class="extracted-title">
-                    {{ $t("workflow.extractedCharacters") }}：
-                  </h4>
+                  <h4 class="extracted-title">提取的角色（本集）：</h4>
                   <div style="display: flex; flex-wrap: wrap; gap: 8px">
-                    <el-tag
-                        v-for="char in currentEpisode?.characters"
-                        :key="char.id"
-                        type="info"
-                    >
+                    <el-tag v-for="char in currentEpisode?.characters" :key="char.id" type="info">
                       {{ char.name }}
-                      <span v-if="char.role" class="secondary-text"
-                      >({{ char.role }})</span
-                      >
+                      <span v-if="char.role" class="secondary-text">({{ char.role }})</span>
                     </el-tag>
                   </div>
                 </div>
 
                 <!-- 场景列表 -->
-                <div
-                    v-if="
-                    currentEpisode?.scenes && currentEpisode.scenes.length > 0
-                  "
-                >
-                  <h4 class="extracted-title">
-                    {{ $t("workflow.extractedScenes") }}：
-                  </h4>
+                <div v-if=" currentEpisode?.scenes && currentEpisode.scenes.length > 0 " >
+                  <h4 class="extracted-title">提取的场景（本集）：</h4>
                   <div style="display: flex; flex-wrap: wrap; gap: 8px">
-                    <el-tag
-                        v-for="scene in currentEpisode.scenes"
-                        :key="scene.id"
-                        type="warning"
-                    >
+                    <el-tag v-for="scene in currentEpisode.scenes" :key="scene.id" type="warning">
                       {{ scene.location }}
                       <span class="secondary-text">· {{ scene.time }}</span>
                     </el-tag>
