@@ -17,7 +17,7 @@ type VolcengineImageClient struct {
 	apiClient *arkruntime.Client
 }
 
-func NewVolcEngineImageClient(baseURL, apiKey, model string) *VolcengineImageClient {
+func NewVolcengineImageClient(baseURL, apiKey, model string) *VolcengineImageClient {
 	if baseURL == "" {
 		baseURL = "https://ark.cn-beijing.volces.com/api/v3"
 	}

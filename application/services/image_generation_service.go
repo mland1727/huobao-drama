@@ -512,7 +512,6 @@ func (s *ImageGenerationService) getImageClient(provider string) (image.ImageCli
 
 	// 根据 provider 自动设置默认端点
 	var endpoint string
-	var queryEndpoint string
 
 	switch actualProvider {
 	case "openai", "dalle":
@@ -523,8 +522,7 @@ func (s *ImageGenerationService) getImageClient(provider string) (image.ImageCli
 		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
 	case "volcengine", "volces", "doubao":
 		endpoint = "/images/generations"
-		queryEndpoint = ""
-		return image.NewVolcEngineImageClient(config.BaseURL, config.APIKey, model), nil
+		return image.NewVolcengineImageClient(config.BaseURL, config.APIKey, model), nil
 	case "gemini", "google":
 		endpoint = "/v1beta/models/{model}:generateContent"
 		return image.NewGeminiImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
@@ -574,7 +572,6 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 
 	// 根据 provider 自动设置默认端点
 	var endpoint string
-	var queryEndpoint string
 
 	s.log.Infow("图片生成配置", "提供商", actualProvider, "模型", model, "基础URL", config.BaseURL)
 
@@ -587,8 +584,7 @@ func (s *ImageGenerationService) getImageClientWithModel(provider string, modelN
 		return image.NewOpenAIImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
 	case "volcengine", "volces", "doubao":
 		endpoint = "/images/generations"
-		queryEndpoint = ""
-		return image.NewVolcEngineImageClient(config.BaseURL, config.APIKey, model), nil
+		return image.NewVolcengineImageClient(config.BaseURL, config.APIKey, model), nil
 	case "gemini", "google":
 		endpoint = "/v1beta/models/{model}:generateContent"
 		return image.NewGeminiImageClient(config.BaseURL, config.APIKey, model, endpoint), nil
