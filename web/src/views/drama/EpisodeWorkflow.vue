@@ -117,7 +117,7 @@
                 <div class="section-title">
                   <h3>
                     <el-icon><User /></el-icon>
-                    {{ $t("workflow.characterImages") }}
+                    角色图片
                   </h3>
                   <el-alert type="info" :closable="false" style="margin: 0">
                     {{
@@ -129,9 +129,8 @@
                   <el-checkbox
                       v-model="selectAllCharacters"
                       @change="toggleSelectAllCharacters"
-                      style="margin-right: 12px"
-                  >
-                    {{ $t("workflow.selectAll") }}
+                      style="margin-right: 12px">
+                    全选
                   </el-checkbox>
                   <el-button
                       type="primary"
@@ -140,9 +139,7 @@
                       :disabled="selectedCharacterIds.length === 0"
                       size="default"
                   >
-                    {{ $t("workflow.batchGenerate") }} ({{
-                      selectedCharacterIds.length
-                    }})
+                    批量生成 ({{ selectedCharacterIds.length }})
                   </el-button>
                 </div>
               </div>
@@ -170,7 +167,7 @@
                           :icon="Delete"
                           circle
                           @click="deleteCharacter(char.id)"
-                          :title="$t('workflow.deleteCharacter')"
+                          title="删除角色"
                       />
                     </div>
 
@@ -189,40 +186,27 @@
                         <el-icon :size="64" class="rotating"
                         ><Loading
                         /></el-icon>
-                        <span>{{ $t("common.generating") }}</span>
-                        <el-tag
-                            type="warning"
-                            size="small"
-                            style="margin-top: 8px"
-                        >{{
+                        <span>生成中</span>
+                        <el-tag type="warning" size="small" style="margin-top: 8px">{{
                             char.image_generation_status === "pending"
-                                ? $t("common.queuing")
-                                : $t("common.processing")
-                          }}</el-tag
-                        >
+                                ? "排队中"
+                                : "处理中"
+                          }}</el-tag>
                       </div>
-                      <div
-                          v-else-if="char.image_generation_status === 'failed'"
-                          class="char-placeholder failed"
-                      >
+                      <div v-else-if="char.image_generation_status === 'failed'" class="char-placeholder failed">
                         <el-icon :size="64"><WarningFilled /></el-icon>
-                        <span>{{ $t("common.generateFailed") }}</span>
-                        <el-tag
-                            type="danger"
-                            size="small"
-                            style="margin-top: 8px"
-                        >{{ $t("common.clickToRegenerate") }}</el-tag
-                        >
+                        <span>生成失败</span>
+                        <el-tag type="danger" size="small" style="margin-top: 8px">点击重新生成</el-tag>
                       </div>
                       <div v-else class="char-placeholder">
                         <el-icon :size="64"><User /></el-icon>
-                        <span>{{ $t("common.notGenerated") }}</span>
+                        <span>未生成</span>
                       </div>
                     </div>
 
                     <div class="card-actions">
                       <el-tooltip
-                          :content="$t('tooltip.editPrompt')"
+                          content="编辑提示"
                           placement="top"
                       >
                         <el-button
@@ -233,7 +217,7 @@
                         />
                       </el-tooltip>
                       <el-tooltip
-                          :content="$t('tooltip.aiGenerate')"
+                          content="AI生成"
                           placement="top"
                       >
                         <el-button
@@ -246,7 +230,7 @@
                         />
                       </el-tooltip>
                       <el-tooltip
-                          :content="$t('tooltip.uploadImage')"
+                          content="上传图片"
                           placement="top"
                       >
                         <el-button
@@ -257,7 +241,7 @@
                         />
                       </el-tooltip>
                       <el-tooltip
-                          :content="$t('tooltip.selectFromLibrary')"
+                          content="从角色库选择"
                           placement="top"
                       >
                         <el-button
@@ -268,7 +252,7 @@
                         />
                       </el-tooltip>
                       <el-tooltip
-                          :content="$t('workflow.addToLibrary')"
+                          content="添加到角色库"
                           placement="top"
                       >
                         <el-button
