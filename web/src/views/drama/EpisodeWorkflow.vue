@@ -458,11 +458,11 @@
               >
                 <el-table-column
                     type="index"
-                    :label="$t('storyboard.table.number')"
+                    label="编号"
                     width="60"
                 />
                 <el-table-column
-                    :label="$t('storyboard.table.title')"
+                    label="标题"
                     width="120"
                     show-overflow-tooltip
                 >
@@ -471,7 +471,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column
-                    :label="$t('storyboard.table.shotType')"
+                    label="景别"
                     width="80"
                 >
                   <template #default="{ row }">
@@ -479,7 +479,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column
-                    :label="$t('storyboard.table.movement')"
+                    label="运镜"
                     width="80"
                 >
                   <template #default="{ row }">
@@ -487,7 +487,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column
-                    :label="$t('storyboard.table.location')"
+                    label="地点"
                     width="150"
                 >
                   <template #default="{ row }">
@@ -507,7 +507,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column
-                    :label="$t('storyboard.table.character')"
+                    label="角色"
                     width="100"
                 >
                   <template #default="{ row }">
@@ -517,7 +517,7 @@
                     <span v-else>-</span>
                   </template>
                 </el-table-column>
-                <el-table-column :label="$t('storyboard.table.action')">
+                <el-table-column label="动作">
                   <template #default="{ row }">
                     <el-popover
                         placement="right"
@@ -535,7 +535,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column
-                    :label="$t('storyboard.table.duration')"
+                    label="时长"
                     width="80"
                 >
                   <template #default="{ row }">
@@ -543,7 +543,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column
-                    :label="$t('storyboard.table.operations')"
+                    label="操作"
                     width="100"
                     fixed="right"
                 >
@@ -655,7 +655,7 @@
               @click="nextStep"
               :disabled="!allImagesGenerated"
           >
-            {{ $t("workflow.nextStepSplitShots") }}
+            下一步：拆分分镜
             <el-icon><ArrowRight /></el-icon>
           </el-button>
           <div v-if="!allImagesGenerated" style="margin-top: 8px">

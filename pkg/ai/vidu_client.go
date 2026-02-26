@@ -82,7 +82,7 @@ func NewViduClient(baseURL, apiKey, model string) *ViduClient {
 		model = "viduq2" // 默认使用 viduq2
 	}
 	if baseURL == "" {
-		baseURL = "https://api.vidu.cn/ent/v2/"
+		baseURL = "https://api.vidu.cn/ent/v2"
 	}
 
 	return &ViduClient{

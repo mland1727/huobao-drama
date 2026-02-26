@@ -249,6 +249,7 @@ const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
       models: ["gemini-3-pro-image-preview"],
     },
     { id: "openai", name: "OpenAI", models: ["dall-e-3", "dall-e-2"] },
+    { id: "vidu", name: "Vidu", models: ["viduq2", "viduq1"] },
   ],
   video: [
     {
@@ -322,7 +323,10 @@ const fullEndpointExample = computed(() => {
   } else if (serviceType === "image") {
     if (provider === "gemini" || provider === "google") {
       endpoint = "/v1beta/models/{model}:generateContent";
-    } else {
+    } else if (provider === "vidu") {
+      endpoint = "/reference2image";
+    }
+    else {
       endpoint = "/images/generations";
     }
   } else if (serviceType === "video") {
@@ -562,6 +566,8 @@ const handleProviderChange = () => {
     form.base_url = "https://ark.cn-beijing.volces.com/api/v3";
   } else if (form.provider === "openai") {
     form.base_url = "https://api.openai.com/v1";
+  } else if (form.provider === "vidu") {
+    form.base_url = "https://api.vidu.cn/ent/v2";
   } else {
     // chatfire 和其他厂商
     form.base_url = "https://api.chatfire.site/v1";
